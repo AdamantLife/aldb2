@@ -1,0 +1,30 @@
+{
+  "appname": "AnimeLife",
+  "version": 1.0,
+  "tables": [
+    {
+      "name": "al_weeklyranking",
+      "sql": "CREATE TABLE al_weeklyranking (animeweekid INTEGER PRIMARY KEY AUTOINCREMENT, week INT NOT NULL, animeseason INT NOT NULL REFERENCES animeseasons(animeseasonid), episodenumber REAL NOT NULL, rank REAL NOT NULL, hypelistrank INT, bookmarked BOOL DEFAULT 1, UNIQUE(week,animeseason,episodenumber))"
+    }
+  ],
+  "views": [
+    {
+      "name": "al_subseriesranking",
+      "sql": "CREATE VIEW al_subseriesranking AS SELECT season.subseries AS subseries, season.seasonid AS season, al_weeklyranking.animeweekid AS rankingweek, al_weeklyranking.week, al_weekindex.weekindex, al_weeklyranking.rank, al_weeklyranking.hypelistrank FROM al_weeklyranking LEFT JOIN al_weekindex ON al_weeklyranking.week = al_weekindex.week LEFT JOIN animeseasons ON al_weeklyranking.animeseason = animeseasons.animeseasonid LEFT JOIN season ON animeseasons.seasonid = season.seasonid"
+    },
+    {
+      "name": "al_weekindex",
+      "sql": "CREATE VIEW al_weekindex AS SELECT cast((seasonindex + week*1.0/1000) *10000 AS int)/ 10000.0 AS weekindex, al_weeklyranking.animeseason AS season, al_weeklyranking.animeweekid AS week FROM al_weeklyranking LEFT JOIN seasonindex ON seasonindex.season = al_weeklyranking.animeseason WHERE week IS NOT NULL"
+    },
+    {
+      "name": "al_rankminmax",
+      "sql": "CREATE VIEW al_rankminmax AS SELECT min(al_subseriesranking.rank)*1.0 AS min, max(al_subseriesranking.rank)*1.0 AS max, showweeks.weekindex FROM al_subseriesranking LEFT JOIN showweeks ON al_subseriesranking.weekindex = showweeks.weekindex GROUP BY al_subseriesranking.weekindex"
+    },
+    {
+      "name": "al_normalized",
+      "sql": "CREATE VIEW al_normalized AS SELECT al_subseriesranking.subseries, al_subseriesranking.weekindex, al_subseriesranking.rank, ((al_subseriesranking.rank - al_rankminmax.min)/(al_rankminmax.max-al_rankminmax.min)) AS normalized FROM al_rankminmax LEFT JOIN al_subseriesranking ON al_subseriesranking.weekindex = al_rankminmax.weekindex"
+    }
+  ],
+  "setup": {
+  }
+}

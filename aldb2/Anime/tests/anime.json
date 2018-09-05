@@ -1,0 +1,116 @@
+{
+  "Test Seasons": {
+    "Good Seasons": [
+      {
+        "season": {
+          "year": 1,
+          "season": "Winter"
+        },
+        "order": 0,
+        "hash": 1.0,
+        "seasonstring": "1-Winter"
+      },
+      {
+        "season": {
+          "year": 2010,
+          "season": "Winter"
+        },
+        "order": 1,
+        "hash": 2010.0,
+        "seasonstring": "2010-Winter"
+      },
+      {
+        "season": {
+          "year": 2010,
+          "season": "Spring"
+        },
+        "order": 2,
+        "hash": 2010.1,
+        "seasonstring": "2010_Spr"
+      },
+      {
+        "season": {
+          "year": 2010,
+          "season": "Summer"
+        },
+        "order": 3,
+        "hash": 2010.2,
+        "seasonstring": "2010-2"
+      },
+      {
+        "season": {
+          "year": 2010,
+          "season": "Fall"
+        },
+        "order": 4,
+        "hash": 2010.3,
+        "seasonstring": "2010 Fall"
+      },
+      {
+        "season": {
+          "year": 2011,
+          "season": "Winter"
+        },
+        "order": 5,
+        "hash": 2011.0,
+        "seasonstring": "W 2011"
+      },
+      {
+        "season": {
+          "year": 2017,
+          "season": "Fall"
+        },
+        "order": 6,
+        "hash": 2017.3,
+        "seasonstring": "fa 2017"
+      },
+      {
+        "season": {
+          "year": 2020,
+          "season": "Spring"
+        },
+        "order": 7,
+        "hash": 2020.1,
+        "seasonstring": 2020.1,
+        "description": "This tests that the DB Standard SeasonIndex format can be parsed"
+      }
+    ],
+    "Bad Seasons": [
+      {
+        "season": {
+          "season": "s",
+          "year": 1
+        },
+        "seasonstring": "a;lksdfjsaf;ja"
+      },
+      {
+        "season": {
+          "season": "Spring",
+          "year": null
+        },
+        "seasonstring": null
+      },
+      {
+        "season": {
+          "season": "Fall",
+          "year": true
+        },
+        "seasonstring": true
+      },
+      {
+        "season": {
+          "season": "Summer",
+          "year": false
+        },
+        "seasonstring": false
+      },
+      {
+        "season": {
+          "season": true,
+          "year": 1
+        },
+        "seasonstring": {}
+      }
+    ]
+  }
+}

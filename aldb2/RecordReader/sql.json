@@ -1,0 +1,8 @@
+{
+  "appname": "RecordReader",
+  "version": "1.0",
+  "tables": [ ],
+  "requires": [
+    "AnimeLife"
+  ]
+}

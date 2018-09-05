@@ -1,0 +1,33 @@
+{
+  "appname": "SeasonCharts",
+  "version": "1.0",
+  "tables": [
+    {
+      "name": "seasoncharts_shows",
+      "sql": "CREATE TABLE seasoncharts_shows (scshowid INTEGER PRIMARY KEY AUTOINCREMENT,season INT REFERENCES season(seasonid) UNIQUE,animeseason INT REFERENCES yearseason(yearseasonid) NOT NULL,year INT NOT NULL,continuing BOOLEAN,summary TEXT)"
+    },
+    {
+      "name": "seasoncharts_tags",
+      "sql": "CREATE TABLE seasoncharts_tags (sctagid INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,description TEXT,spoiler BOOLEAN DEFAULT 0)"
+    },
+    {
+      "name": "seasoncharts_showtags",
+      "sql": "CREATE TABLE seasoncharts_showtags (scshowtagid INTEGER PRIMARY KEY AUTOINCREMENT,scshowid INT NOT NULL REFERENCES seasoncharts_shows(scshowid),sctagid INT NOT NULL REFERENCES seasoncharts_tags(sctagid),UNIQUE(scshowid,sctagid) ON CONFLICT IGNORE)"
+    },
+    {
+      "name": "seasoncharts_showimages",
+      "sql": "CREATE TABLE seasoncharts_showimages (scimageid INTEGER PRIMARY KEY AUTOINCREMENT,scshowid INTEGER REFERENCES seasoncharts_shows(scschowid) NOT NULL,url TEXT NOT NULL UNIQUE)"
+    },
+    {
+      "name": "seasoncharts_showaliases",
+      "sql": "CREATE TABLE seasoncharts_showaliases (seasonaliasid INTEGER PRIMARY KEY AUTOINCREMENT,seasonalias TEXT NOT NULL,scshow INT NOT NULL REFERENCES seasoncharts_shows(scshowid),language TEXT)"
+    },
+    {
+      "name": "seasoncharts_siteids",
+      "sql": "CREATE TABLE seasoncharts_siteids (scchartidid INTEGER PRIMARY KEY AUTOINCREMENT, scshowid INT NOT NULL REFERENCES seasoncharts_shows(scshowid), wmsiteid INT NOT NULL REFERENCES webmodules_website(mwsiteid), siteid TEXT NOT NULL, UNIQUE(scshowid,wmsiteid))"
+    }
+  ],
+  "requires": [
+    "WebModules"
+  ]
+}

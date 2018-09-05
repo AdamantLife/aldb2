@@ -1,0 +1,62 @@
+{
+  "appname": "Core",
+  "verison": 1.0,
+  "tables": [
+    {
+      "name": "series",
+      "sql": "CREATE TABLE series(seriesid INTEGER PRIMARY KEY AUTOINCREMENT, series TEXT NOT NULL)"
+    },
+    {
+      "name": "aliases_series",
+      "sql": "CREATE TABLE aliases_series (seriesaliasid INTEGER PRIMARY KEY AUTOINCREMENT,seriesalias TEXT NOT NULL,series INT NOT NULL REFERENCES series(seriesid), language,UNIQUE(seriesalias,series) ON CONFLICT IGNORE)"
+    },
+    {
+      "name": "subseries",
+      "sql": "CREATE TABLE subseries(subseries TEXT, series INT NOT NULL, subseriesid INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(series) REFERENCES series(seriesid))"
+    },
+    {
+      "name": "aliases_subseries",
+      "sql": "CREATE TABLE aliases_subseries (subseriesaliasid INTEGER PRIMARY KEY AUTOINCREMENT,subseriesalias TEXT NOT NULL,subseries INT NOT NULL REFERENCES subseries(subseriesid), language,UNIQUE(subseriesalias,subseries) ON CONFLICT IGNORE)"
+    },
+    {
+      "name": "users",
+      "sql": "CREATE TABLE \"users\" (userid INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, salt TEXT NOT NULL, hash TEXT NOT NULL)"
+    },
+    {
+      "name": "sessions",
+      "sql": "CREATE TABLE \"sessions\" (sessionid INTEGER PRIMARY KEY AUTOINCREMENT, userid INT REFERENCES \"users\"(userid) ON DELETE CASCADE, authtoken TEXT NOT NULL, authtime DATETIME NOT NULL)"
+    },
+    {
+      "name": "installed_apps",
+      "sql": "CREATE TABLE \"installed_apps\" (installid INTEGER PRIMARY KEY AUTOINCREMENT, module TEXT NOT NULL, version TEXT NOT NULL, UNIQUE(module))"
+    },
+    {
+      "name": "user_apps",
+      "sql": "CREATE TABLE \"user_apps\" (uappid INTEGER PRIMARY KEY AUTOINCREMENT,  userid INT NOT NULL REFERENCES \"users\"(userid), installid INT NOT NULL REFERENCES \"installed_apps\"(installid) ON DELETE CASCADE, UNIQUE(userid,installid) ON CONFLICT IGNORE)"
+    },
+    {
+      "name": "genres",
+      "sql": "CREATE TABLE genres (genreid INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,abbreviation TEXT UNIQUE,heavy BOOLEAN DEFAULT 0,spoiler BOOLEAN DEFAULT 0)"
+    },
+    {
+      "name": "genrelist_subseries",
+      "sql": "CREATE TABLE genrelist_subseries (genrelistid INTEGER PRIMARY KEY AUTOINCREMENT,genre INT NOT NULL REFERENCES genres(genreid),subseries INT NOT NULL REFERENCES subseries(subseriesid),UNIQUE(genre,subseries) ON CONFLICT IGNORE)"
+    },
+    {
+      "name": "yearseason",
+      "sql": "CREATE TABLE yearseason (yearseasonid INTEGER PRIMARY KEY AUTOINCREMENT, season TEXT NOT NULL UNIQUE)"
+    },
+    {
+      "name": "company",
+      "sql": "CREATE TABLE company (companyid INTEGER PRIMARY KEY AUTOINCREMENT, company TEXT NOT NULL, role TEXT NOT NULL)"
+    },
+    {
+      "name": "aliases_company",
+      "sql": "CREATE TABLE aliases_company (companyaliasid INTEGER PRIMARY KEY AUTOINCREMENT, companyalias TEXT NOT NULL, company INT NOT NULL REFERENCES company(companyid), language,UNIQUE(companyalias,company) ON CONFLICT IGNORE)"
+    }
+  ],
+  "setup": {
+    "genres": [ "setgenres" ],
+    "yearseason": [ "setyearseasons" ]
+  }
+}

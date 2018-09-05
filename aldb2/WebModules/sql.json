@@ -1,0 +1,19 @@
+{
+  "appname": "WebModules",
+  "version": "1.0",
+  "tables": [
+    {
+      "name": "webmodules_website",
+      "sql": "CREATE TABLE webmodules_website (wmsiteid INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,domain TEXT NOT NULL)"
+    },
+    {
+      "name": "webmodules_aliases",
+      "sql": "CREATE TABLE webmodules_aliases (wmaliasid INTEGER PRIMARY KEY AUTOINCREMENT, website INT NOT NULL REFERENCES webmodules_website(wmsiteid), alias TEXT NOT NULL UNIQUE)"
+    },
+    {
+      "name": "webmodules_siteids",
+      "sql": "CREATE TABLE webmodules_siteids (wmsiteidid INTEGER PRIMARY KEY AUTOINCREMENT,season INT REFERENCES season(seasonid),website INT REFERENCES webmodules_website(wmsiteid),siteid TEXT NOT NULL,UNIQUE(season,website) ON CONFLICT REPLACE)"
+    }
+  ],
+  "requires": [ "Anime" ]
+}

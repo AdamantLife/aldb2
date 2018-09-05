@@ -1,0 +1,235 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>0cf13466-17fd-486b-b42e-26aa87929f5c</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>__init__.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>aldb2</Name>
+    <RootNamespace>aldb2</RootNamespace>
+    <InterpreterId>Global|PythonCore|3.6</InterpreterId>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="AnimeLife\sql.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="AnimeLife\tests\test_sql.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="AnimeLife\tests\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="AnimeLife\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Anime\sql.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Anime\tests\test_anime.py" />
+    <Compile Include="Anime\tests\test_sql.py" />
+    <Compile Include="Anime\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Calendar\anilist.py" />
+    <Compile Include="Calendar\syoboi.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Calendar\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="constants.py" />
+    <Compile Include="Core\core.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Core\sql\security.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Core\sql\util.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Core\sql\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Core\tests\test_sql_core.py" />
+    <Compile Include="Core\tests\test_sql_util.py" />
+    <Compile Include="Core\tests\__init__.py" />
+    <Compile Include="Core\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="filestructure.py" />
+    <Compile Include="Anime\anime.py" />
+    <Compile Include="Manga\manga.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Manga\sql.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Manga\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RecordReader\classes.py" />
+    <Compile Include="RecordReader\master.py" />
+    <Compile Include="RecordReader\sql.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RecordReader\tests\test_sql.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RecordReader\tests\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RecordReader\__init__.py" />
+    <Compile Include="SeasonCharts\anilist.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SeasonCharts\sql.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SeasonCharts\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestApp\sql.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestApp\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="webmodules\anidb.py" />
+    <Compile Include="WebModules\anidb.py" />
+    <Compile Include="WebModules\anilist\graphql.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="WebModules\anilist\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="webmodules\animenewsnetwork.py" />
+    <Compile Include="WebModules\animenewsnetwork.py" />
+    <Compile Include="webmodules\crunchyroll\rss.py" />
+    <Compile Include="WebModules\crunchyroll\rss.py" />
+    <Compile Include="webmodules\crunchyroll\webscraper.py" />
+    <Compile Include="WebModules\crunchyroll\webscraper.py" />
+    <Compile Include="webmodules\crunchyroll\__init__.py" />
+    <Compile Include="WebModules\crunchyroll\__init__.py" />
+    <Compile Include="webmodules\myanimelist.py" />
+    <Compile Include="SeasonCharts\anichart.py" />
+    <Compile Include="SeasonCharts\gammut.py" />
+    <Compile Include="SeasonCharts\livechart.py" />
+    <Compile Include="WebModules\myanimelist.py" />
+    <Compile Include="WebModules\sql.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="WebModules\tests\test_sql.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="WebModules\tests\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="webmodules\__init__.py" />
+    <Compile Include="WebModules\__init__.py" />
+    <Compile Include="__init__.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="AnimeLife\tests\" />
+    <Folder Include="Anime\" />
+    <Folder Include="Anime\tests\" />
+    <Folder Include="Core\sql\" />
+    <Folder Include="Core\tests\" />
+    <Folder Include="Core\tests\__pycache__\" />
+    <Folder Include="Manga\" />
+    <Folder Include="Core\" />
+    <Folder Include="Calendar\" />
+    <Folder Include="AnimeLife\" />
+    <Folder Include="RecordReader\" />
+    <Folder Include="RecordReader\tests\" />
+    <Folder Include="RecordReader\__pycache__\" />
+    <Folder Include="SeasonCharts\" />
+    <Folder Include="TestApp\" />
+    <Folder Include="WebModules\" />
+    <Folder Include="WebModules\" />
+    <Folder Include="webmodules\crunchyroll\" />
+    <Folder Include="WebModules\crunchyroll\" />
+    <Folder Include="webmodules\crunchyroll\__pycache__\" />
+    <Folder Include="WebModules\crunchyroll\__pycache__\" />
+    <Folder Include="WebModules\anilist\" />
+    <Folder Include="WebModules\tests\" />
+    <Folder Include="webmodules\__pycache__\" />
+    <Folder Include="WebModules\__pycache__\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="AnimeLife\sql.json" />
+    <Content Include="Anime\tests\sql.json" />
+    <Content Include="Calendar\sql.json" />
+    <Content Include="Core\sql\config.json" />
+    <Content Include="Core\sql\genres.json" />
+    <Content Include="Core\sql\sql.json" />
+    <Content Include="Anime\sql.json" />
+    <Content Include="Anime\tests\anime.json" />
+    <Content Include="Core\tests\__pycache__\test_sql_core.cpython-36.pyc" />
+    <Content Include="Core\tests\__pycache__\test_sql_util.cpython-36.pyc" />
+    <Content Include="Core\tests\__pycache__\__init__.cpython-36.pyc" />
+    <Content Include="Manga\sql.json" />
+    <Content Include="RecordReader\sql.json" />
+    <Content Include="RecordReader\__pycache__\classes.cpython-36.pyc" />
+    <Content Include="RecordReader\__pycache__\__init__.cpython-36.pyc" />
+    <Content Include="SeasonCharts\sql.json" />
+    <Content Include="TestApp\sql.json" />
+    <Content Include="webmodules\crunchyroll\__pycache__\rss.cpython-36.pyc" />
+    <Content Include="WebModules\crunchyroll\__pycache__\rss.cpython-36.pyc" />
+    <Content Include="webmodules\crunchyroll\__pycache__\__init__.cpython-36.pyc" />
+    <Content Include="WebModules\crunchyroll\__pycache__\__init__.cpython-36.pyc" />
+    <Content Include="WebModules\sql.json" />
+    <Content Include="webmodules\__pycache__\anidb.cpython-35.pyc" />
+    <Content Include="WebModules\__pycache__\anidb.cpython-35.pyc" />
+    <Content Include="webmodules\__pycache__\anidb.cpython-36.pyc" />
+    <Content Include="WebModules\__pycache__\anidb.cpython-36.pyc" />
+    <Content Include="webmodules\__pycache__\anilist.cpython-36.pyc" />
+    <Content Include="WebModules\__pycache__\anilist.cpython-36.pyc" />
+    <Content Include="webmodules\__pycache__\animenewsnetwork.cpython-35.pyc" />
+    <Content Include="WebModules\__pycache__\animenewsnetwork.cpython-35.pyc" />
+    <Content Include="webmodules\__pycache__\animenewsnetwork.cpython-36.pyc" />
+    <Content Include="WebModules\__pycache__\animenewsnetwork.cpython-36.pyc" />
+    <Content Include="webmodules\__pycache__\myanimelist.cpython-35.pyc" />
+    <Content Include="WebModules\__pycache__\myanimelist.cpython-35.pyc" />
+    <Content Include="webmodules\__pycache__\myanimelist.cpython-36.pyc" />
+    <Content Include="WebModules\__pycache__\myanimelist.cpython-36.pyc" />
+    <Content Include="webmodules\__pycache__\__init__.cpython-35.pyc" />
+    <Content Include="WebModules\__pycache__\__init__.cpython-35.pyc" />
+    <Content Include="webmodules\__pycache__\__init__.cpython-36.pyc" />
+    <Content Include="WebModules\__pycache__\__init__.cpython-36.pyc" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|3.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="aldb2env\">
+      <Id>aldb2env</Id>
+      <Version>3.6</Version>
+      <Description>aldb2env (Python 3.6 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+  <!-- Uncomment the CoreCompile target to enable the Build command in
+       Visual Studio and specify your pre- and post-build commands in
+       the BeforeBuild and AfterBuild targets below. -->
+  <!--<Target Name="CoreCompile" />-->
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+</Project>

@@ -1,0 +1,176 @@
+[
+  {
+    "name": "Action",
+    "abbreviation": "ACTN",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Adventure",
+    "abbreviation": "ADVN",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Comedy",
+    "abbreviation": "CMDY",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Dark Mahou Shoujo",
+    "abbreviation": "DMSJ",
+    "heavy": true,
+    "spoiler": false
+  },
+  {
+    "name": "Drama",
+    "abbreviation": "DRMA",
+    "heavy": true,
+    "spoiler": false
+  },
+  {
+    "name": "Ecchi",
+    "abbreviation": "ECHI",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Fantasy",
+    "abbreviation": "FTSY",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Harem",
+    "abbreviation": "HREM",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Historical",
+    "abbreviation": "HIST",
+    "heavy": true,
+    "spoiler": false
+  },
+  {
+    "name": "Horror",
+    "abbreviation": "HORR",
+    "heavy": true,
+    "spoiler": false
+  },
+  {
+    "name": "Idol",
+    "abbreviation": "IDOL",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Intrigue",
+    "abbreviation": "INTR",
+    "heavy": true,
+    "spoiler": false
+  },
+  {
+    "name": "Mahou Shoujo",
+    "abbreviation": "MHSJ",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Mecha",
+    "abbreviation": "MECH",
+    "heavy": true,
+    "spoiler": false
+  },
+  {
+    "name": "Misc",
+    "abbreviation": "MISC",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Mystery",
+    "abbreviation": "MYST",
+    "heavy": true,
+    "spoiler": false
+  },
+  {
+    "name": "Psychological",
+    "abbreviation": "PSYC",
+    "heavy": true,
+    "spoiler": false
+  },
+  {
+    "name": "R",
+    "abbreviation": "R",
+    "heavy": true,
+    "spoiler": false
+  },
+  {
+    "name": "Romance",
+    "abbreviation": "RMNC",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Satire",
+    "abbreviation": "SATR",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "SciFi",
+    "abbreviation": "SCFI",
+    "heavy": true,
+    "spoiler": false
+  },
+  {
+    "name": "Seinen",
+    "abbreviation": "SENN",
+    "heavy": true,
+    "spoiler": false
+  },
+  {
+    "name": "Shonen",
+    "abbreviation": "SHNN",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Shoujo",
+    "abbreviation": "SHJO",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Slice-of-Life",
+    "abbreviation": "SLIC",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Sports",
+    "abbreviation": "SPRT",
+    "heavy": false,
+    "spoiler": false
+  },
+  {
+    "name": "Supernatural",
+    "abbreviation": "SUPR",
+    "heavy": true,
+    "spoiler": false
+  },
+  {
+    "name": "Thriller",
+    "abbreviation": "THRL",
+    "heavy": true,
+    "spoiler": false
+  },
+  {
+    "name": "Yaoi",
+    "abbreviation": "YAOI",
+    "heavy": false,
+    "spoiler": false
+  }
+]

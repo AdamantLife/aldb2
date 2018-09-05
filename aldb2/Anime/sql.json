@@ -1,0 +1,59 @@
+{
+  "appname": "Anime",
+  "version": 1.0,
+  "tables": [
+    {
+      "name": "mediums",
+      "sql": "CREATE TABLE mediums (mediumid INTEGER PRIMARY KEY AUTOINCREMENT,medium TEXT UNIQUE)"
+    },
+    {
+      "name": "season",
+      "sql": "CREATE TABLE season(season TEXT, subseries INT, medium TEXT REFERENCES mediums(mediumid), episodes INT, seasonid INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(subseries) REFERENCES subseries(subseriesid))"
+    },
+    {
+      "name": "aliases_season",
+      "sql": "CREATE TABLE aliases_season (seasonaliasid INTEGER PRIMARY KEY AUTOINCREMENT,seasonalias TEXT NOT NULL,season INT NOT NULL REFERENCES season(seasonid), language,UNIQUE(seasonalias,season) ON CONFLICT IGNORE)"
+    },
+    {
+      "name": "similar_anime",
+      "sql": "CREATE TABLE similar_anime (similarid INTEGER PRIMARY KEY AUTOINCREMENT,season1 INT NOT NULL REFERENCES season(seasonid),season2 INT NOT NULL REFERENCES season(seasonid),CHECK (season1 != season2), UNIQUE(season1,season2) ON CONFLICT IGNORE)"
+    },
+    {
+      "name": "animelibrary",
+      "sql": "CREATE TABLE animelibrary(season INT NOT NULL, catrank TEXT, rank INT, locked BOOLEAN, episodeswatched INT, lastwatched REAL, libraryid INTEGER PRIMARY KEY AUTOINCREMENT, bookmarked BOOLEAN, notes TEXT, FOREIGN KEY(season) REFERENCES season(seasonid))"
+    },
+    {
+      "name": "genrelist_season",
+      "sql": "CREATE TABLE genrelist_season (genrelistid INTEGER PRIMARY KEY AUTOINCREMENT,genre INT NOT NULL REFERENCES genres(genreid),season INT NOT NULL REFERENCES season(seasonid),UNIQUE(genre,season) ON CONFLICT IGNORE)"
+    },
+    {
+      "name": "images_anime",
+      "sql": "CREATE TABLE images_anime (imageid INTEGER PRIMARY KEY AUTOINCREMENT,season INTEGER NOT NULL REFERENCES season(seasonid),url TEXT NOT NULL,imagetype TEXT,UNIQUE(season,url) ON CONFLICT REPLACE)"
+    },
+    {
+      "name": "links_anime",
+      "sql": "CREATE TABLE links_anime (linkid INTEGER PRIMARY KEY AUTOINCREMENT,season INT NOT NULL REFERENCES season(seasonid),url TEXT NOT NULL,identification TEXT,UNIQUE(season,url) ON CONFLICT REPLACE)"
+    },
+    {
+      "name": "animeseasons",
+      "sql": "CREATE TABLE animeseasons(seasonid INT NOT NULL, season INT NOT NULL REFERENCES yearseason(yearseasonid), year INT NOT NULL, animeseasonid INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(seasonid) REFERENCES season(seasonid))"
+    },
+    {
+      "name": "airinginfo",
+      "sql": "CREATE TABLE airinginfo (airinginfoid INTEGER PRIMARY KEY AUTOINCREMENT,animeseason INTEGER NOT NULL REFERENCES animeseason(animeseasonid),firstepisode DATETIME,time DATETIME)"
+    }
+  ],
+  "views": [
+    {
+      "name": "season_fulltext",
+      "sql": "CREATE VIEW season_fulltext AS SELECT series.seriesid, series.series, subseries.subseriesid, subseries.subseries, season.seasonid, season.season, CASE WHEN series.series IS NOT NULL THEN series.series ELSE \"\" END || \" \" || CASE WHEN subseries.subseries IS NOT NULL THEN subseries.subseries ELSE \"\" END || \" \" || CASE WHEN season.season IS NOT NULL THEN season.season ELSE \"\" END AS fulltext FROM season LEFT JOIN subseries ON season.subseries = subseries.subseriesid LEFT JOIN series ON subseries.series = series.seriesid"
+    },
+    {
+      "name": "seasonindex",
+      "sql": "CREATE VIEW seasonindex AS SELECT (year*1.0 + season*1.0/10) AS seasonindex, animeseasonid AS season FROM animeseasons"
+    }
+  ],
+  "setup": {
+    "medium": [ "setmediums" ]
+  }
+}
