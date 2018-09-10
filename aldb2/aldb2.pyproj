@@ -150,6 +150,7 @@
     <Folder Include="Core\" />
     <Folder Include="Calendar\" />
     <Folder Include="AnimeLife\" />
+    <Folder Include="Changelog\" />
     <Folder Include="RecordReader\" />
     <Folder Include="RecordReader\tests\" />
     <Folder Include="RecordReader\__pycache__\" />
@@ -171,6 +172,7 @@
     <Content Include="AnimeLife\tests\test_master_stats.csv" />
     <Content Include="Anime\tests\sql.json" />
     <Content Include="Calendar\sql.json" />
+    <Content Include="Changelog\changelog v2.1.0.md" />
     <Content Include="Core\sql\config.json" />
     <Content Include="Core\sql\genres.json" />
     <Content Include="Core\sql\sql.json" />
