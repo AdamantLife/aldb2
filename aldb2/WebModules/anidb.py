@@ -18,6 +18,22 @@ from aldb2 import filestructure
 ## from aldb2.Core import modules as coremodules ## TODO: This needs to be fixed at some point
 from aldb2.Core import sql
 
+#################################################################
+"""
+                     webmodules Requirements
+                                                              """
+#################################################################
+SITENAME = "anidb"
+
+def match_url(url):
+    return bool(re.search("""anidb\.net""",url))
+
+def parse_siteid(url):
+    result = re.search("""(https?://)?anidb.net/(?P<siteid>a?\d+)""",url)
+    if result:
+        return result.group("siteid")
+    return False
+
 ##########################################################################
 ###################    AnimeDatabase AniDB Settings    ###################
 ##########################################################################
@@ -25,10 +41,13 @@ ANIDBDATALOCATION=(filestructure.DATAPATH / 'extra data' / 'anidbdata.dat').reso
 DEFAULTDATA={"LASTANIDBDUMP":0,"LANGUAGES":None,"username":"","password":""}
 
 def createdata():
+    if not ANIDBDATALOCATION.parent.exists():
+        ANIDBDATALOCATION.parent.mkdir(parents = True)
     with open(ANIDBDATALOCATION,'w') as f:
         json.dump(DEFAULTDATA,f)
 
 def getdata():
+    if not ANIDBDATALOCATION.exists(): return {}
     with open(ANIDBDATALOCATION,'r') as f:
         return json.load(f)
 
@@ -47,7 +66,7 @@ def savedata(newdata):
     with open(ANIDBDATALOCATION,'w') as f:
         json.dump(out,f)
 
-if not os.path.exists(ANIDBDATALOCATION):createdata
+if not os.path.exists(ANIDBDATALOCATION):createdata()
 olddata=getdata()
 for key,value in DEFAULTDATA.items():
     if key not in olddata:
@@ -117,7 +136,7 @@ VOTESURL=r"http://anidb.net/perl-bin/animedb.pl?show=votes&aid={identification}"
 EPISODEVOTESURL=r"http://anidb.net/perl-bin/animedb.pl?show=votes&eid={episodeid}"
 OUTPUTLOCATION= (filestructure.DATAPATH / r"anidb").resolve()
 STATSARCHIVELOCATION= str(OUTPUTLOCATION) + "votes {anidbid}.html"
-if not OUTPUTLOCATION.exists(): OUTPUTLOCATION.mkdirs(parents=True)
+if not OUTPUTLOCATION.exists(): OUTPUTLOCATION.mkdir(parents=True)
 
 ANIDBRE = re.compile(ANIMEURL.replace("http:","https?:").replace(r"{identification}",r"(?P<identification>\w+)"))
 def parseidfromurl(url):

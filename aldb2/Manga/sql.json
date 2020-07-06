@@ -4,7 +4,7 @@
   "tables": [
     {
       "name": "manga_series",
-      "sql": "CREATE TABLE manga_series (mangaseriesid INTEGER PRIMARY KEY AUTOINCREMENT, subseriesid INT NOT NULL REFERENCES subseries(subseriesid), volumes INT);"
+      "sql": "CREATE TABLE manga_series (mangaseriesid INTEGER PRIMARY KEY AUTOINCREMENT, series INT NOT NULL REFERENCES series(seriesid), volumes INT);"
     },
     {
       "name": "manga_publishinginfo",
@@ -17,14 +17,6 @@
     {
       "name": "manga_company",
       "sql": "CREATE TABLE manga_company (mangacompanyid INTEGER PRIMARY KEY AUTOINCREMENT, company INT NOT NULL REFERENCES company(companyid), notes TEXT)"
-    },
-    {
-      "name": "genrelist_mangaseries",
-      "sql": "CREATE TABLE genrelist_mangaseries (genrelistid INTEGER PRIMARY KEY AUTOINCREMENT, genreid INT NOT NULL REFERENCES genres(genreid), mangaseriesid INT NOT NULL REFERENCES mangaseries(mangaseriesid), UNIQUE (genreid,mangaseriesid) ON CONFLICT IGNORE);"
-    },
-    {
-      "name": "images_manga",
-      "sql": "CREATE TABLE images_manga (imageid INTEGER PRIMARY KEY AUTOINCREMENT, mangaseriesid INT NOT NULL REFERENCES mangaseries(mangaseriesid),url TEXT NOT NULL, imagetype TEXT, UNIQUE (mangaseriesid,url) ON CONFLICT REPLACE);"
     }
   ]
 }

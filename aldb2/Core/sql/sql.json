@@ -3,20 +3,16 @@
   "verison": 1.0,
   "tables": [
     {
+      "name": "franchise",
+      "sql": "CREATE TABLE franchise(franchiseid INTEGER PRIMARY KEY AUTOINCREMENT)"
+    },
+    {
+      "name": "aliases",
+      "sql": "CREATE TABLE aliases (aliasid INTEGER PRIMARY KEY AUTOINCREMENT, node INT NOT NULL, tablename TEXT NOT NULL, alias TEXT NOT NULL,official BOOLEAN DEFAULT 0, language TEXT, UNIQUE(node,tablename,alias,language) ON CONFLICT IGNORE, UNIQUE(node,tablename,official,language))"
+    },
+    {
       "name": "series",
-      "sql": "CREATE TABLE series(seriesid INTEGER PRIMARY KEY AUTOINCREMENT, series TEXT NOT NULL)"
-    },
-    {
-      "name": "aliases_series",
-      "sql": "CREATE TABLE aliases_series (seriesaliasid INTEGER PRIMARY KEY AUTOINCREMENT,seriesalias TEXT NOT NULL,series INT NOT NULL REFERENCES series(seriesid), language,UNIQUE(seriesalias,series) ON CONFLICT IGNORE)"
-    },
-    {
-      "name": "subseries",
-      "sql": "CREATE TABLE subseries(subseries TEXT, series INT NOT NULL, subseriesid INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(series) REFERENCES series(seriesid))"
-    },
-    {
-      "name": "aliases_subseries",
-      "sql": "CREATE TABLE aliases_subseries (subseriesaliasid INTEGER PRIMARY KEY AUTOINCREMENT,subseriesalias TEXT NOT NULL,subseries INT NOT NULL REFERENCES subseries(subseriesid), language,UNIQUE(subseriesalias,subseries) ON CONFLICT IGNORE)"
+      "sql": "CREATE TABLE series(seriesid INTEGER PRIMARY KEY AUTOINCREMENT)"
     },
     {
       "name": "users",
@@ -39,8 +35,8 @@
       "sql": "CREATE TABLE genres (genreid INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,abbreviation TEXT UNIQUE,heavy BOOLEAN DEFAULT 0,spoiler BOOLEAN DEFAULT 0)"
     },
     {
-      "name": "genrelist_subseries",
-      "sql": "CREATE TABLE genrelist_subseries (genrelistid INTEGER PRIMARY KEY AUTOINCREMENT,genre INT NOT NULL REFERENCES genres(genreid),subseries INT NOT NULL REFERENCES subseries(subseriesid),UNIQUE(genre,subseries) ON CONFLICT IGNORE)"
+      "name": "genrelist",
+      "sql": "CREATE TABLE genrelist (genrelistid INTEGER PRIMARY KEY AUTOINCREMENT,node INT NOT NULL, tablename TEXT NOT NULL, genre INT NOT NULL REFERENCES genres(genreid),UNIQUE(node,tablename,genre) ON CONFLICT IGNORE)"
     },
     {
       "name": "yearseason",
@@ -51,8 +47,12 @@
       "sql": "CREATE TABLE company (companyid INTEGER PRIMARY KEY AUTOINCREMENT, company TEXT NOT NULL, role TEXT NOT NULL)"
     },
     {
-      "name": "aliases_company",
-      "sql": "CREATE TABLE aliases_company (companyaliasid INTEGER PRIMARY KEY AUTOINCREMENT, companyalias TEXT NOT NULL, company INT NOT NULL REFERENCES company(companyid), language,UNIQUE(companyalias,company) ON CONFLICT IGNORE)"
+      "name": "links",
+      "sql": "CREATE TABLE links (linkid INTEGER PRIMARY KEY AUTOINCREMENT, node INT NOT NULL, tablename TEXT NOT NULL, url TEXT NOT NULL, identification TEXT, UNIQUE(node,tablename,url) ON CONFLICT IGNORE)"
+    },
+    {
+      "name": "images",
+      "sql": "CREATE TABLE images (imagesid INTEGER PRIMARY KEY AUTOINCREMENT, node INT NOT NULL, tablename TEXT NOT NULL, url TEXT NOT NULL, imagetype TEXT, UNIQUE(node,tablename,url) ON CONFLICT IGNORE)"
     }
   ],
   "setup": {

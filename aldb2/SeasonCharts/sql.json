@@ -28,6 +28,6 @@
     }
   ],
   "requires": [
-    "WebModules"
+    "webmodules"
   ]
 }

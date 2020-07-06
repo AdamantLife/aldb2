@@ -7,6 +7,7 @@ import json
 import re
 ## Custom Module
 from alcustoms import web
+from alcustoms.web import requests as alrequests
 from aldb2 import SeasonCharts
 
 CHARTNAME = "AniChart"
@@ -19,7 +20,7 @@ YOUTUBELINK = "www.youtube.com/watch?v={youtube_id}"
 ## Ordered for desired output
 APIDATAHEADERS = ['title_japanese', 'title_romaji', 'title_english', 'first episode', 'airing', 'hashtag', 'image', 'airing_status', 'anilist_link', 'average_score', 'description', 'duration', 'end_date', 'external_links', 'genres', 'id', 'mal_link', 'popularity', 'rankings', 'season', 'source', 'start_date', 'studio', 'synonyms', 'tags', 'total_episodes', 'type', 'youtube_id']
 
-sessiondecorator = web.session_decorator_factory(useragent = True, referrer = "http://anichart.net")
+sessiondecorator = alrequests.session_decorator_factory(useragent = True, referrer = "http://anichart.net")
 
 def checkcsrf(func):
     """ Decorator for functions that require anichart's csrf token ("X-CSRF-TOKEN"; i.e.- API calls) """
@@ -49,8 +50,8 @@ class Show(dict):
 def getshowsbyseason(season,year, session = None):
     """ Queries the API for the given season-year and returns the API information """
     url = APIURL.format(season=season, year = year)
-    headers = {"X-CSRF-TOKEN":session.cookies['XSRF-TOKEN']}
-    data = web.requests_GET_json(url,session = session, headers=headers)
+    headers = {"X-CSRF-TOKEN":session.cookies['X-CSRF-TOKEN']}
+    data = alrequests.GET_json(url,session = session, headers=headers)
     return {cat:[Show(**show) for show in shows] for cat,shows in data.items()}
 
 def consolidate_data(data):

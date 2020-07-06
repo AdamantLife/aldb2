@@ -2,6 +2,8 @@ from aldb2.Core.sql import util
 
 from aldb2.Anime import anime
 
+from alcustoms import sql
+
 SQLCONFIG = util.loadsqljson(__file__)
 
 ############### Database Setup
@@ -13,8 +15,9 @@ def setmediums(connection):
 
 def getseasonallookup(connection):
     """ Returns a dictionary of {seasonname:rowid} for the yearseason table (Spring,Summer,Fall,Winter) """
-    results = connection.execute("""SELECT yearseasonid,season FROM yearseason;""").fetchall()
-    return {r[1]:r[2] for r in results}
+    with sql.Utilities.temp_row_factory(connection,None):
+        results = connection.execute("""SELECT yearseasonid,season FROM yearseason;""").fetchall()
+        return {r[1]:r[0] for r in results}
 
 def getseasonindex(year,season):
     """ Returns the correct seasonindex for the given year and season """
@@ -90,3 +93,20 @@ def QS_gettitle():
         with tables named "series", "subseries", and "season".
     """
     return """( series.series || (CASE WHEN subseries.subseries IS NOT NULL THEN "- "||subseries.subseries ELSE "" END) || (CASE WHEN season.season IS NOT NULL THEN ": "||season.season ELSE "" END) ) AS title """
+
+
+def get_AnimeSeason(animeseasonid, db = None):
+    """ Helper function to extract AnimeSeason objects from animeseasons rows. """
+    if isinstance(animeseasonid,sql.AdvancedRow):
+        if not animeseasonid.table.name =="animeseasons":
+            raise ValueError("Invalid AdvancedRow")
+        return anime.AnimeSeason(season = animeseasonid.season.season, year = animeseasonid.year)
+    if not isinstance(animeseasonid,int):
+        raise TypeError("animeseasonid must be either an AdvancedRow instance or an integer representing the row's id")
+    if not db or not isinstance(db,sql.Connection.Connection):
+        raise TypeError("If animeseasonid is not an AdvancedRow, a database Connection is required")
+    with sql.Utilities.temp_row_factory(db,sql.advancedrow_factory):
+        animeseasonid = db.getadvancedtable("animeseasons").quickselect(pk = animeseasonid).first()
+    if not animeseasonid:
+        raise ValueError("Invalid animeseasonid")
+    return anime.AnimeSeason(season = animeseasonid.season.season, year = animeseasonid.year)

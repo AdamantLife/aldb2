@@ -320,7 +320,7 @@ class Show():
 class RankingSheet():
     RANKHEADER="rank"
     NEWRANKHEADER="newrank"
-    EPISODEHEADER="totalepisodes"
+    EPISODEHEADER="episodes"
     HYPEOCCURENCEHEADER="hypelistoccurences"
     WEEKRE=re.compile('''.*week\s*(?P<week>\d+)''',re.IGNORECASE)
     def getheaderindex(columns,header):
