@@ -11,7 +11,9 @@
     <OutputPath>.</OutputPath>
     <Name>aldb2</Name>
     <RootNamespace>aldb2</RootNamespace>
-    <InterpreterId>Global|PythonCore|3.6</InterpreterId>
+    <InterpreterId>
+    </InterpreterId>
+    <TestFramework>unittest</TestFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -39,7 +41,16 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Calendar\anilist.py" />
-    <Compile Include="Calendar\syoboi.py">
+    <Compile Include="WebModules\funimation\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="WebModules\myanimelist\scraping.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="WebModules\myanimelist\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="WebModules\syoboi.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Calendar\__init__.py">
@@ -47,6 +58,9 @@
     </Compile>
     <Compile Include="constants.py" />
     <Compile Include="Core\core.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Core\sql\admin.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Core\sql\security.py">
@@ -121,11 +135,10 @@
     <Compile Include="WebModules\crunchyroll\webscraper.py" />
     <Compile Include="webmodules\crunchyroll\__init__.py" />
     <Compile Include="WebModules\crunchyroll\__init__.py" />
-    <Compile Include="webmodules\myanimelist.py" />
+    <Compile Include="WebModules\myanimelist\api.py" />
     <Compile Include="SeasonCharts\anichart.py" />
     <Compile Include="SeasonCharts\gammut.py" />
     <Compile Include="SeasonCharts\livechart.py" />
-    <Compile Include="WebModules\myanimelist.py" />
     <Compile Include="WebModules\sql.py">
       <SubType>Code</SubType>
     </Compile>
@@ -163,6 +176,8 @@
     <Folder Include="webmodules\crunchyroll\__pycache__\" />
     <Folder Include="WebModules\crunchyroll\__pycache__\" />
     <Folder Include="WebModules\anilist\" />
+    <Folder Include="WebModules\myanimelist\" />
+    <Folder Include="WebModules\funimation\" />
     <Folder Include="WebModules\tests\" />
     <Folder Include="webmodules\__pycache__\" />
     <Folder Include="WebModules\__pycache__\" />
@@ -185,6 +200,7 @@
     <Content Include="RecordReader\sql.json" />
     <Content Include="RecordReader\__pycache__\classes.cpython-36.pyc" />
     <Content Include="RecordReader\__pycache__\__init__.cpython-36.pyc" />
+    <Content Include="requirements.txt" />
     <Content Include="SeasonCharts\sql.json" />
     <Content Include="TestApp\sql.json" />
     <Content Include="webmodules\crunchyroll\__pycache__\rss.cpython-36.pyc" />
@@ -210,20 +226,6 @@
     <Content Include="WebModules\__pycache__\__init__.cpython-35.pyc" />
     <Content Include="webmodules\__pycache__\__init__.cpython-36.pyc" />
     <Content Include="WebModules\__pycache__\__init__.cpython-36.pyc" />
-  </ItemGroup>
-  <ItemGroup>
-    <InterpreterReference Include="Global|PythonCore|3.6" />
-  </ItemGroup>
-  <ItemGroup>
-    <Interpreter Include="aldb2env\">
-      <Id>aldb2env</Id>
-      <Version>3.6</Version>
-      <Description>aldb2env (Python 3.6 (64-bit))</Description>
-      <InterpreterPath>Scripts\python.exe</InterpreterPath>
-      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
-      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
-      <Architecture>X64</Architecture>
-    </Interpreter>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

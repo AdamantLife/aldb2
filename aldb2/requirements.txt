@@ -1,0 +1,10 @@
+selenium
+click
+requests
+#-e git+https://github.com/AdamantLife/alcustoms.git
+bs4
+pillow
+numpy
+matplotlib
+openpyxl
+python-Levenshtein

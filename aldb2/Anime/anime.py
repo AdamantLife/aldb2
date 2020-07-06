@@ -59,6 +59,9 @@ def parseanimeseason(astring): ## Tested: AnimeSeasonDictCase.test_parseanimesea
         return astring
 
     if isinstance(astring,str):
+        try: astring = float(astring)
+        except: pass
+        else: return parseanimeseason(astring)
         if len(astring.split())>1: return parseanimeseason(astring.split())         ## Convert whitespace-separated to list
         if len(astring.split("_"))>1: return parseanimeseason(astring.split("_"))   ## Convert underscore-separated to list
         if len(astring.split("-"))>1: return parseanimeseason(astring.split("-"))   ## Convert hyphen-separated to list
@@ -83,8 +86,9 @@ def parseanimeseason(astring): ## Tested: AnimeSeasonDictCase.test_parseanimesea
 
     if isinstance(astring,float):
         ## SeasonIndex representation (aka- AnimeSeason.__hash__ format)
-        season = astring - int(astring)
+        season = (astring - int(astring))
         year = int(astring - season)
+        season = round(season*10,0)
         return parseanimeseason(dict(season = season, year = year))
     raise ValueError("Not an AnimeSeason")
 

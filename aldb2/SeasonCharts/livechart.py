@@ -10,13 +10,16 @@ import warnings
 import bs4
 ## Custom Module
 from alcustoms import web
+from alcustoms.web import requests as alrequests
 from aldb2 import SeasonCharts
 
 CHARTNAME = "Livechart"
 
-URLFORMAT = r"https://www.livechart.me/{season}-{year}/all"
+## 1/2020 Update: changed from /all to /tv
+URLFORMAT = r"https://www.livechart.me/{season}-{year}/tv"
 MORELINKSAPI = r"https://www.livechart.me/api/v1/anime/{livechartid}/streams?country_code=AUTO"
 
+ALTERNATETITLESRE = re.compile("(?:\"(.*?)\"[,\]])")
 SEASONRE = re.compile("""(?P<season>\w+) (?P<year>\d+)""")
 TAGIDRE = re.compile("""/tags/(?P<tagid>\d+)""")
 DATERE = re.compile("""
@@ -39,7 +42,7 @@ LINKRE = re.compile("""(?P<site>.*)-icon""")
 MONTHNAME = list(calendar.month_name)
 MONTHABBR = list(calendar.month_abbr)
 
-sessiondecorator = web.session_decorator_factory(useragent = True, referrer = "https://www.livechart.me")
+sessiondecorator = alrequests.session_decorator_factory(useragent = True, referrer = "https://www.livechart.me")
 
 def checkcsrf(func):
     """ Decorator for functions that require livechart's csrf token (_livechart_session; i.e.- API calls) """
@@ -55,10 +58,11 @@ class ParserWarning(Warning):
 
 class Show():
     """ A livechart.me Show Object """
-    def __init__(self, japanese, romaji, english, alternatetitles, season, showtype, livechartid, tags, img, studios, startdate, episodes, notes, summary, links):
+    def __init__(self, japanese, romaji, english, alternatetitles, season, showtype, livechartid, tags, img, studios, startdate, episodes, runtime, notes, summary, links):
         self.japanese=japanese
         self.romaji=romaji
         self.english=english
+        if alternatetitles is None: alternatetitles = []
         self.alternatetitles=alternatetitles
         self.season = season
         self.showtype=showtype
@@ -68,6 +72,7 @@ class Show():
         self.studios=studios
         self.startdate=startdate
         self.episodes = episodes
+        self.runtime = runtime
         self.notes=notes
         self.summary=summary
         self.links=links
@@ -75,22 +80,24 @@ class Show():
         return {'japanese': self.japanese, 'romaji': self.romaji, 'english': self.english,
                 'alternatetitles': self.alternatetitles, 'season': self.season, 'showtype': self.showtype,
                 'livechartid': self.livechartid, 'tags': self.tags, 'img': self.img, 'studios': self.studios,
-                'startdate': self.startdate.strftime("%H:%M %d/%m/%Y %z"), 'episodes': self.episodes, 'notes': self.notes,
-                'summary': self.summary, 'links': self.links}
+                'startdate': self.startdate.strftime("%H:%M %d/%m/%Y %z"), 'episodes': self.episodes, 'runtime': self.runtime,
+                'notes': self.notes, 'summary': self.summary, 'links': self.links}
+    def __repr__(self):
+        return f"{self.__class__.__name__} Object: {self.japanese} ({__name__})"
 
 def getshowsbyseason(season,year):
     """ Returns a list of Show objects for the given season and year """
     url = URLFORMAT.format(season = season.lower(), year = year)
-    session = web.getbasicsession(useragent = True)
+    session = alrequests.getbasicsession(useragent = True)
 
-    soup = web.requests_GET_soup(url, session = session)
+    soup = alrequests.GET_soup(url, session = session)
     return parsesoup(soup, session = session)
 
 @sessiondecorator
 def parsesoup(soup, session = None):
     """ Parses the soup from a livechart.me page """
     ## Parse the Season
-    titleele = soup.find("h1",class_ = "chart-title")
+    titleele = soup.find(class_="page-header-box").find("h1")
     seasonresearch = SEASONRE.search(" ".join(titleele.stripped_strings))
     season,year = seasonresearch.group("season"),seasonresearch.group("year")
     season = SeasonCharts.buildseason(season,year)
@@ -116,7 +123,7 @@ def convertmonth(month):
 def getmorelinks(livechartid, session = None):
     """ Checks the morelinks API for more links """
     url = MORELINKSAPI.format(livechartid = livechartid)
-    resp = web.requests_GET_json(url,session = session)
+    resp = alrequests.GET_json(url,session = session)
     links = []
     if isinstance(resp,dict):
         for link in resp['items']:
@@ -157,12 +164,15 @@ def parsearticle(article, session = None, season = None):
         else:
             warnings.warn(f"Could not Parse the following element:\n{article}\n{exc}",ParserWarning)
         return
-    japanese = titleele.attrs.get('data-japanese')
-    romaji = titleele.attrs.get('data-romaji')
-    english = titleele.attrs.get('data-english')
-    alternatetitles = titleele.attrs.get('data-alternate')
+    japanese = article.attrs.get('data-native')
+    romaji = article.attrs.get('data-romaji')
+    english = article.attrs.get('data-english')
+
+    alt_titles = article.attrs.get('data-alternate')
+    alternatetitles = ALTERNATETITLESRE.findall(alt_titles)
+
     showtype = " ".join(showtypes)
-    livechartid = article.attrs.get("data-id")
+    livechartid = article.attrs.get("data-anime-id")
     tags = []
     for tagele in tageles:
         tagname = " ".join(tagele.stripped_strings)
@@ -210,11 +220,15 @@ def parsearticle(article, session = None, season = None):
 
     notes = ", ".join(" ".join(extra.stripped_strings) for extra in extraele("div",class_="anime-extra"))
     episodes = 0
+    runtime = None
     if episodesele:
         episoderesearch = EPISODESRE.search(" ".join(episodesele.stripped_strings))
         if episoderesearch:
             episodes = episoderesearch.group("episodes")
             if episodes == "?": episodes = 0
+            runtime = episoderesearch.group("runtime")
+            if runtime == "?": runtime = None
+            
     summary = "\n".join(" ".join(p.stripped_strings) for p in synopsisele("p"))
 
     links = []
@@ -227,9 +241,10 @@ def parsearticle(article, session = None, season = None):
             links.extend(getmorelinks(livechartid, session = session))
         else:
             links.append((linktype,link['href']))
+
     return Show(japanese=japanese, romaji=romaji, english=english, alternatetitles=alternatetitles,
                 season = season, showtype=showtype, livechartid=livechartid, tags=tags, img=img, studios=studios,
-                startdate=startdate, episodes=episodes, notes=notes, summary=summary, links=links)
+                startdate=startdate, episodes=episodes, runtime=runtime, notes=notes, summary=summary, links=links)
 
 def serializeshows(file,shows):
     """ Creates a json file containing the shows """
@@ -242,7 +257,8 @@ def convertshowstostandard(data, season = None, showfactory = SeasonCharts.Show)
     season will be pased to converttostandard
     """
     out = list()
-    for show in data: out.append(converttostandard(show, season, showfactory = showfactory))
+    for show in data:
+        out.append(converttostandard(show, season, showfactory = showfactory))
     return out
 
 def converttostandard(show, season = None, showfactory = SeasonCharts.Show):
@@ -256,7 +272,7 @@ def converttostandard(show, season = None, showfactory = SeasonCharts.Show):
     japanese_title = show.japanese
     romaji_title = show.romaji
     english_title = show.english
-    additional_titles = show.alternatetitles.split(", ")
+    additional_titles = show.alternatetitles
     medium = show.showtype
     continuing = "leftovers" in [note.lower() for note in show.notes]
     summary = f"(From {CHARTNAME})\n{show.summary}"

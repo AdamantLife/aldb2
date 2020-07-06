@@ -11,6 +11,25 @@ import xml.etree.ElementTree as ElementTree
 ## from aldb2.Core import modules as coremodules ## TODO: Fix This
 from aldb2.Core import sql
 
+#################################################################
+"""
+                     webmodules Requirements
+                                                              """
+#################################################################
+SITENAME = "AnimeNewsNetwork"
+
+def match_url(url):
+    return bool(re.search("""animenewsnetwork\.com""",url))
+
+def parse_siteid(url):
+    result = re.search("""(https?://)?www.animenewsnetwork.com/encyclopedia/anime.php?id=(?P<siteid>\d+)""",url)
+    if result:
+        return result.group("siteid")
+    return False
+
+#################################################################
+#################################################################
+
 ANN_APIURL=r"http://www.animenewsnetwork.com/encyclopedia/reports.xml?id=155&search={series}"
 ANN_ENCYCURL=r"http://www.animenewsnetwork.com/encyclopedia/anime.php?id={identification}"
 

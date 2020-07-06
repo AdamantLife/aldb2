@@ -27,14 +27,14 @@ showfactory allows for seasoncharts.Show to be subclassed and used in this workf
 to sort the results by their module of origin.
 
 
-Updating Show:
-    When adjusting Show also adjust:
+Subclassing Show:
+    When adapting Show also adjust:
         Show.serialize
         Show.__iadd__
         save_as_csv
 """
 
-DTFORMAT = "%d/%m/%Y %H:%M %z"
+DTFORMAT = "%d/%m/%Y %H:%M:%S %z"
 
 SEASONALIASES = [0  , "0"   , "w"       , "wi"  , "win",
                  1  , "1"   , "spring"  , "sp"  , "spr",
@@ -82,7 +82,6 @@ def buildseason(season,year):
         season = ["Winter","Spring","Summer","Fall"][index]
     season = season.capitalize()
     if season not in ("Winter","Spring","Summer","Fall"):
-        print(season)
         raise AttributeError("Season must be 'Winter','Spring','Summer', or 'Fall', or an accepted alias")
     out = f"{season}-{year}"
     if not matchseason(out):
@@ -91,7 +90,7 @@ def buildseason(season,year):
 
 class Show():
     """ A generalized container for outputting standardized chart data """
-    def __init__(self, chartsource, season, japanese_title, romaji_title = "", english_title = "", additional_titles = None, medium = "TV", continuing = False, renewal = False, summary = "", tags = None, startdate = None, episodes = 0, images = None, studios = None, links = None):
+    def __init__(self, chartsource, season, japanese_title, romaji_title = "", english_title = "", additional_titles = None, medium = "TV", continuing = False, renewal = False, summary = "", tags = None, startdate = None, episodes = 0, runtime = 0, images = None, studios = None, links = None):
         """ Creates a new standardized Show Object.
 
         chartsource is a list of chart sources for this show. Each element should be a tuple (chart name, show's id for the chart).
@@ -153,6 +152,9 @@ class Show():
             episodes = 0
         episodes = int(episodes)
         self.episodes = episodes
+        if runtime is None: runtime = 0
+        runtime = int(runtime)
+        self.runtime = runtime
 
         if images is None: images = []
         ## In case user only submits one image
@@ -184,7 +186,7 @@ class Show():
                     english_title = self.english_title, additional_titles = self.additional_titles,
                     medium = self.medium, continuing = self.continuing, renewal = self.renewal, summary = self.summary,
                     tags = [tag.serialize() for tag in self.tags], startdate = self.startdate.strftime(DTFORMAT),
-                    episodes = self.episodes, images = self.images, studios = self.studios, links = self.links)
+                    episodes = self.episodes, runtime = self.runtime, images = self.images, studios = self.studios, links = self.links)
 
     def __eq__(self,other):
         if isinstance(other,Show):
@@ -240,6 +242,8 @@ class Show():
                     self.startdate = other.startdate
                 ## Assume that the highest episodes number is the most accurate
                 self.episodes = max(self.episodes,other.episodes)
+                ## Assume that the highest runtime is the most accurate
+                self.runtime = max(self.runtime if self.runtime else 0, other.runtime if other.runtime else 0)
                 ## There should never be duplicates, but we'll check anyway
                 for image in other.images:
                     if image not in self.images: 
@@ -256,6 +260,9 @@ class Show():
                     if url not in links:
                         self.links.append((sitename,url))
                 return self
+        raise TypeError(f"Invalid types for &=: {self.__class__.__name__} and {other.__class__.__name__}")
+    def __repr__(self):
+        return f"{self.__class__.__name__} Object: {self.japanese_title}({__name__})"
 
 class Tag():
     """ A Descriptive term for the content and themes of a Show """
@@ -326,7 +333,7 @@ def save_as_csv(shows, filename, include_spoilers = False):
     """
 
     output = list()
-    headers = ["ChartSource","Season","Japanese Title","Romaji Title","English Title","Additional Titles", "Medium", "Continuing", "Renewal", "Summary", "Tags", "StartDate", "Episodes", "Images", "Studios"]
+    headers = ["ChartSource","Season","Japanese Title","Romaji Title","English Title","Additional Titles", "Medium", "Continuing", "Renewal", "Summary", "Tags", "StartDate", "Episodes", "Runtime", "Images", "Studios"]
     ## Showlinks is for accounting for links in relation to individual shows
     showlinks = list()
     ## sites is for creating a master list
@@ -338,10 +345,11 @@ def save_as_csv(shows, filename, include_spoilers = False):
         if include_spoilers: tags = show.tags
         else: tags = [tag for tag in show.tags if not tag.spoiler]
         out.append(", ".join(tag.tag for tag in tags))
-        out.extend([show.startdate.strftime(DTFORMAT), show.episodes, ", ".join(show.images), ", ".join(show.studios)])
+        out.extend([show.startdate.isoformat(), show.episodes, show.runtime, ", ".join(show.images), ", ".join(show.studios)])
         ## We're going to handle links separately
         showlinks.append(show.links)
         sites.extend(site for site,link in show.links)
+
 
         output.append(out)
 
@@ -356,7 +364,6 @@ def save_as_csv(shows, filename, include_spoilers = False):
         count = max([showlink.count(site) for showlink in showsites])
         ## Since we'll be iterating the numbers several times, we'll initialize a variable to work off of
         counts = list(range(1,count+1))
-        print(counts)
         ## Add headers
         for i in counts:
             ## For any additional header, add a numeric suffix
@@ -371,7 +378,6 @@ def save_as_csv(shows, filename, include_spoilers = False):
             ## Add links for the site, and fill in missing links with empty strings
             for link,count in itertools.zip_longest(links,counts, fillvalue = ""):
                 showoutput.append(link)
-    print(headers)
 
     ## We should now be done
     with open(filename,'w', encoding = "utf-8", newline = "") as f:

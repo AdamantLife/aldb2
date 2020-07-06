@@ -1,14 +1,15 @@
 ## This Module
 from aldb2 import Calendar
-from aldb2.WebModules import anilist
-from aldb2.WebModules.anilist import graphql
+from aldb2.webmodules import anilist
+from aldb2.webmodules.anilist import graphql
 
 ## Custom Module
 from alcustoms import web
+from alcustoms.web import requests as alrequests
 
 
 
-@web.sessiondecorator
+@alrequests.sessiondecorator
 def getshowarings_graphql(shows, session = None):
     """ Uses anilist's GraphQL API to get Show Airings """
     ## Get urls for the shows that it's available

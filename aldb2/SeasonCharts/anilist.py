@@ -3,11 +3,12 @@ import datetime
 
 ## This Module
 from aldb2 import SeasonCharts
-from aldb2.WebModules import anilist,myanimelist
-from aldb2.WebModules.anilist import graphql
+from aldb2.webmodules import anilist,myanimelist
+from aldb2.webmodules.anilist import graphql
 
 ## Custom Module
 from alcustoms import web
+from alcustoms.web import requests as alrequests
 
 
 """ ALDB2 Integration at Bottom """
@@ -28,7 +29,7 @@ from alcustoms import web
 def graphql_getchartstats(season,year):
     """ GraphQL API method for gathering SeasonChart Information """
     shows = list()
-    session = web.getbasicsession()
+    session = alrequests.getbasicsession()
     aseason = SeasonCharts.buildseason(season,year)
 
     ## Season Field and PageInfo are the same for every iteration
@@ -70,7 +71,7 @@ def graphql_getchartstats(season,year):
             studionodes = show['studios']['nodes']
             externallinks = show['externalLinks']
             anilistid = anilist.ANIMEURL.format(identification = show['id'])
-            malid = myanimelist.MAL_URL.format(identification = show['idMal'])
+            malid = myanimelist.format_siteid(show['idMal'])
 
             japanese_title = titles['native']
             romaji_title = titles["romaji"]
@@ -123,7 +124,7 @@ def getchartstats_season(season,year):
         isMain = True
         )
     seasonfields = ("id","idMal","format",titlefield,"episodes",startDatefield,trailerfield,relationsfield,linksfield,"hashtag","synonyms","description",tagsfield,imagefield,studiosfield)
-    return getseasonmedia("Spring",2018,*seasonfields,type = graphql.ANIME)
+    return getseasonmedia(season,year,*seasonfields,type = graphql.ANIME)
 
 def getseasonmedia(season,year,*fields,**filters):
     """ Returns a PageMedia for the given season """

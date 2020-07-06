@@ -2,7 +2,7 @@
 import datetime
 
 ## Sister Module
-from ChartMaker import classes
+from aldb2.RecordReader import classes
 
 class EpisodeAiring():
     """ A Simple Container Object for an Episode's Airing """

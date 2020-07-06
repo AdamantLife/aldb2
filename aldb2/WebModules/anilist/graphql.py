@@ -1,5 +1,6 @@
 ## Custom Module
 from alcustoms import graphql_query,web
+from alcustoms.web import requests as alrequests
 from alcustoms.graphql_query import Enum,EnumList,DeferredField,Field,IntList,StrList
 
 """ GraphQL API Module
@@ -13,10 +14,10 @@ HEADERS = {'Content-Type': 'application/json',
 def query_api(querystring,variables = None, session = None):
     """ Queries the graphql api with the given querystring """
     if variables is None: variables = dict()
-    if session is None: session = web.getbasicsession()
+    if session is None: session = alrequests.getbasicsession()
     if isinstance(querystring,graphql_query.Query):
         querystring = querystring.getquery()
-    return web.requests_POST_json(API_URL,session = session, headers = HEADERS,
+    return alrequests.POST_json(API_URL,session = session, headers = HEADERS,
                                   json = dict(query=querystring,variables=variables))
 
 for constant in (

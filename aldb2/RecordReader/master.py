@@ -17,7 +17,7 @@ from aldb2.RecordReader import classes
 
 from alcustoms.methods import isiterable, testfileobj
 
-root = pathlib.Path.cwd().resolve().parent
+root = pathlib.Path.cwd().resolve()
 DEFAULTSTATFILE = (root / "master_stats.csv").resolve()
 DEFAULTEPISODEFILE = (root / "master_episodes.csv").resolve()
 del root
@@ -84,7 +84,7 @@ def save_masterepisodes(output,file):
     if not isiterable(output) or not all(isinstance(obj,MasterEpisode) for obj in output):
         raise ValueError("output must be a list of MasterStat objects")
     with open(file,'w', newline = "", encoding = "utf-8") as f:
-        fieldnames = MasterEpisode(None,None,None,None,None,None,None).to_dict().keys()
+        fieldnames = MasterEpisode(None,None,1.0,None,None,None,None).to_dict().keys()
         writer = csv.DictWriter(f,fieldnames = fieldnames)
         writer.writeheader()
         writer.writerows([stat.to_dict() for stat in output])
@@ -108,6 +108,7 @@ class MasterEpisode():
         self.seasonid = seasonid
         self.originalid = originalid
         self.seasonindex = seasonindex
+        self.animeseason = anime.parseanimeseason_toobject(seasonindex)
         self.week = week
         self.rank = rank
         self.episodenumber = episodenumber
@@ -137,6 +138,7 @@ def compile_directory(directory, statsfile = None, episodesfile = None):
         statsfile = DEFAULTSTATFILE
     if episodesfile is None:
         episodesfile = DEFAULTEPISODEFILE
+
 
     recordfiles = classes.listvalidfilenames(directory)
 
