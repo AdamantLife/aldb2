@@ -1,6 +1,6 @@
 
 ## Parent Module
-from aldb2 import webmodules
+from aldb2 import WebModules
 
 ## Custom
 from alcustoms import sql

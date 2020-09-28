@@ -14,7 +14,7 @@ def discover_modules():
     lopath = pathlib.Path(__file__).resolve().parent
     def filetest(pathobj):
         """ Tests if a Path Object is a valid submodule """
-        _module = importlib.import_module("aldb2.webmodules."+pathobj.stem)
+        _module = importlib.import_module("aldb2.WebModules."+pathobj.stem)
         for required_attr in ["SITENAME",]:
             if not getattr(_module,required_attr,None):
                 del _module
@@ -26,7 +26,7 @@ def discover_modules():
         return True
 
     for pyfile in filemodules.iterdir_re(lopath,".*",test = filetest):
-        mod = importlib.import_module("aldb2.webmodules."+pyfile.stem)
+        mod = importlib.import_module("aldb2.WebModules."+pyfile.stem)
         MODULES[mod.SITENAME] = mod
 
 MODULES = {}
