@@ -4,6 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
+
     name="AL Anime Database 2",
     version="1.0.0",
     author="AdamantLife",
@@ -15,20 +16,20 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.8',
 
     install_requires = [
         "selenium",
-"click",
-"requests",
-#git+https://github.com/AdamantLife/alcustoms.git
-"bs4",
-"pillow",
-"numpy",
-"matplotlib",
-"openpyxl",
-"python-Levenshtein"
+        "click",
+        "requests",
+        "bs4",
+        "pillow",
+        "numpy",
+        "matplotlib",
+        "openpyxl",
+        "python-Levenshtein"
         ]
 )
