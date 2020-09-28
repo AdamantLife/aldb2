@@ -1,0 +1,14 @@
+Metadata-Version: 2.1
+Name: AL-Anime-Database-2
+Version: 1.0.0
+Summary: V2 of the AnimeDatabase
+Home-page: https://github.com/AdamantLife/aldb2
+Author: AdamantLife
+Author-email: contact.adamantmedia@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown

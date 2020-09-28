@@ -8,6 +8,9 @@ import re
 #################################################################
 SITENAME = "crunchyroll"
 
+HOMEPAGE = "https://www.crunchyroll.com/"
+LOGINURL = "https://www.crunchyroll.com/login"
+
 def match_url(url):
     return bool(re.search("""crunchyroll\.com""",url))
 
