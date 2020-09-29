@@ -203,7 +203,7 @@ def consolidate_duplicates_titles(shows):
 
 def remove_ero(shows):
     """ Checks for specific key phrases that indicate that a show is hentai but was not tagged as such on its chart """
-    regex = re.compile("Based on.*?(ero\w*? game|CG)", re.IGNORECASE)
+    regex = re.compile("Based on.*?(ero\w*? (doujin|game|CG))", re.IGNORECASE)
     blackliststudios = ["Fancy Realize Media",]
     def filterEro(show):
         """ Return False if show is suspected of being hentai """
@@ -234,7 +234,7 @@ def remove_ero(shows):
 def remove_shorts(shows):
     """ Removes all shows with medium "shorts" or "TV_SHORT" from the output """
     def filterShorts(show):
-        if show.medium and show.medium.lower() in ["shorts", "tv_short"]:
+        if show.medium and show.medium.lower() in ["shorts", "tv_short", "tv short"]:
             echo(f"> Filtering: {show.romaji_title}")
             return False
         return True
