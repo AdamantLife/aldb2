@@ -67,7 +67,7 @@ def getstats(conn,animeseasons):
     shows=gettitles(conn,animeseasons=animeseasons)
     out=dict()
     for show in shows:
-        seriespage=webmodules.getseriespage(show)
+        seriespage=WebModules.getseriespage(show)
         seriessoup=bs4.BeautifulSoup(seriespage,"html.parser")
         seriesratings=getseriesratings(seriessoup)
         episodes=getepisodeobjects(seriessoup)

@@ -6,8 +6,8 @@ import re
 from aldb2 import Core
 from aldb2 import SeasonCharts
 from aldb2.SeasonCharts import anilist,livechart ## anichart ## It seems that anichart may be an exact mirror of anilist at this point
-from aldb2.webmodules import myanimelist ## Used to get additional information about shows
-from aldb2.webmodules.myanimelist.scraping import getshowstats ## Used to get additional information about shows
+from aldb2.WebModules import myanimelist ## Used to get additional information about shows
+from aldb2.WebModules.myanimelist.scraping import getshowstats ## Used to get additional information about shows
 
 ## Third Party
 from Levenshtein import distance as lev_distance

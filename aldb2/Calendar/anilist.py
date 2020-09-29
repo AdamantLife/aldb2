@@ -1,7 +1,7 @@
 ## This Module
 from aldb2 import Calendar
-from aldb2.webmodules import anilist
-from aldb2.webmodules.anilist import graphql
+from aldb2.WebModules import anilist
+from aldb2.WebModules.anilist import graphql
 
 ## Custom Module
 from alcustoms import web
