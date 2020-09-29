@@ -1,4 +1,4 @@
-""" aldb2.webmodules.myanimelist.scraping
+""" aldb2.WebModules.myanimelist.scraping
 
 
     This module is provided for when the API is broken. Please use the API when available.
@@ -13,8 +13,8 @@ import pathlib                              ## Stat Scraping
 import re                                   ## Stat Scraping
 import time                                 ## 
 ## This Library
-from aldb2 import webmodules                ## Stat Scraping (Timezones)
-from aldb2.webmodules import myanimelist    ## General
+from aldb2 import WebModules                ## Stat Scraping (Timezones)
+from aldb2.WebModules import myanimelist    ## General
 from aldb2.Core import core as coremodules  ## Stat Scraping
 from aldb2.Core import sql                  ## Stat Scraping
 ## Custom Module
@@ -176,7 +176,7 @@ class Scraper():
                             if airtime:
                                 t = datetime.datetime.strptime(airtime.group("time"),"%H:%M")
                                 if (timezone := airtime.group("timezone")) and timezone.lower() == "jst":
-                                    t.replace(tzinfo = webmodules.JST)
+                                    t.replace(tzinfo = WebModules.JST)
                                 self.stats['airtime'] = t
                     elif key in ["producers", "licensors","studios"] and value.strip() != "None":
                         self.stats[key] = [p.strip() for p in value.split(",")]

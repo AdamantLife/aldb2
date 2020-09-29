@@ -3,8 +3,8 @@ import datetime
 
 ## This Module
 from aldb2 import SeasonCharts
-from aldb2.webmodules import anilist,myanimelist
-from aldb2.webmodules.anilist import graphql
+from aldb2.WebModules import anilist,myanimelist
+from aldb2.WebModules.anilist import graphql
 
 ## Custom Module
 from alcustoms import web

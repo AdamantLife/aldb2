@@ -15,26 +15,26 @@ def search_site(connection, value):
     if not isinstance(value,str):
         raise ValueError("Search value must be a string.")
 
-    return connection.execute("""SELECT webmodules_website.* FROM
-webmodules_website
-LEFT JOIN webmodules_aliases ON webmodules_website.wmsiteid = webmodules_aliases.website
+    return connection.execute("""SELECT WebModules_website.* FROM
+WebModules_website
+LEFT JOIN WebModules_aliases ON WebModules_website.wmsiteid = WebModules_aliases.website
 WHERE name LIKE "%:value%"
     OR domain LIKE "%:value%"
     OR alias LIKE "%:value%";""").fetchall()
 
 def get_sitemodule(connection, site):
     ## figure out what site contains
-    name = webmodules.check_site(site)
+    name = WebModules.check_site(site)
 
-    ## check_site will check the base name (name that appears in webmodules_website)
+    ## check_site will check the base name (name that appears in WebModules_website)
     if not name:
         with sql.Utilities.temp_row_factory(connection,sql.advancedrow_factory):
-            aliaspk = connection.getadvancedtable("webmodules_aliases").quickselect(alias__like = site).first()
+            aliaspk = connection.getadvancedtable("WebModules_aliases").quickselect(alias__like = site).first()
         if not aliaspk:
             raise LookupError(f"Could not locate website with name or url: {url_or_sitename}")
         name = aliaspk.website.name
 
-    return webmodules.MODULES[name]
+    return WebModules.MODULES[name]
 
 def validate_add_siteid(connection,seasonid, url_or_sitename,siteid = None):
     """ Parses out information based on provided information and adds it to the database """
@@ -52,10 +52,10 @@ def validate_add_siteid(connection,seasonid, url_or_sitename,siteid = None):
     if not siteid:
         raise ValueError("Could not determine siteid")
 
-    dbid = connection.getadvancedtable("webmodules_website").quickselect(name = _module.SITENAME).first()
+    dbid = connection.getadvancedtable("WebModules_website").quickselect(name = _module.SITENAME).first()
     ## Need website to add
     if dbid is None:
         raise ValueError("Could not get ID for website")
 
-    result = connection.getadvancedtable("webmodules_siteids").get_or_addrow(website = dbid, season = seasonid, siteid = siteid).first()
+    result = connection.getadvancedtable("WebModules_siteids").get_or_addrow(website = dbid, season = seasonid, siteid = siteid).first()
     return result
