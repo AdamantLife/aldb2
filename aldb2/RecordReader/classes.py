@@ -10,6 +10,7 @@ from aldb2.Anime import anime
 
 ## Custom Module
 from alcustoms import excel, filemodules ## Extension of openpyxl
+from alcustoms.excel import Tables
 
 
 
@@ -21,9 +22,10 @@ WBNAMERE=re.compile(WBNAME)
 ## WBNAME[1:] -> Remove start-of-line marker
 FILENAMERE = re.compile(f"""^__Record\s+{WBNAME[1:]}\s*.xlsx?""",re.IGNORECASE)
 ## WEEKRE is currently used on tables (which cannot have spaces) but accepts spaces for use with Workbook names
-WEEKRE = re.compile("""^Week(?:\s|_)*(?P<number>\d+)""", re.IGNORECASE)
+WEEKRE = re.compile("""^Week(?:\s|_)*(?P<number>\d+)\s*$""", re.IGNORECASE)
 ## See WEEKRE note
 HYPERE = re.compile("""^Hype(?:\s|_)*Week(?:\s|_)*(?P<number>\d+)""", re.IGNORECASE)
+HYPEHISTRE = re.compile("""^Hype_Week(?P<number>\d+)_PreviousWeek\s*$""", re.IGNORECASE)
 
 def listvalidfilenames(dire):
     """ Compiles a list of all the validly named Record files (as pathlib.Path instances; does not garauntee that the files are correctly formatted) """
@@ -40,7 +42,6 @@ def extractseasonfromfilename(filename):
         if season:
             out+=season+" "
         if year: out+=year
-        print(out)
         return anime.parseanimeseason_toobject(out)
 
 
@@ -53,7 +54,7 @@ class SeasonRecord():
         self._recordstats = None
         self._showstatssheet = None
         self._showstats = None
-        tables = excel.get_all_tables(xlsx)
+        tables = Tables.get_all_tables(xlsx)
         tables = {table.displayName:table for (ws,table) in tables}
         try:
             table = tables['RecordStats']
@@ -64,14 +65,19 @@ class SeasonRecord():
             table = tables['Stats']
         except KeyError:
             table = ShowStats.parsesheet(self._sheets['Show Stats'])
-        self._showstats = self._showstats=ShowStats(table = table, record = self)
+        self._showstats = ShowStats(table = table, record = self)
                 
         self._weeks={}
         weektables = {int(WEEKRE.search(name).group("number")):table for name,table in tables.items() if WEEKRE.match(name)}
         hypetables = {int(HYPERE.search(name).group("number")):table for name,table in tables.items() if HYPERE.match(name)}
+        historytables = {int(HYPEHISTRE.search(name).group("number")):table for name, table in tables.items() if HYPEHISTRE.match(name)}
         for week,table in weektables.items():
             hypetable = hypetables.get(week)
-            s=RankingSheet(table,hypetable,self)
+            if self.recordstats.version < 4:
+                s=RankingSheetV1(table,hypetable,self)
+            else:
+                historytable = historytables.get(week)
+                s = RankingSheetV4(table, hypetable, self, historytable)
             s.setshowstats(self.showstats.shows)
             self._weeks[week]=s
     @property
@@ -128,7 +134,7 @@ class RecordStats():
     def parsesheet(sheet):
         column = 1
         row = 1
-        tableref = excel.gettablesize(sheet,startcolumn = column, startrow = row)
+        tableref = Tables.gettablesize(sheet,startcolumn = column, startrow = row)
         table = excel.EnhancedTable(worksheet = sheet, displayName = "RecordStats", ref = tableref)
         return table
     def __init__(self,table,record):
@@ -137,16 +143,23 @@ class RecordStats():
         ## todicts returns keys() at index 1 (also note that this should also only 
         ## return 1 actual row if the RecordStats is properly formatted)
         self.stats = {key.lower():v for key,v in self.table.todicts()[1].items()}
-        self.season,self.year = None,None
-        if "season" in self.stats:
-            self.season = self.stats['season']
-        if "year" in self.stats:
-            self.year = self.stats['year']
+        
 
-        if not self.season or not self.year:
-            season = extractseasonfromfilename(self.record.file)
-            if not self.season: self.season = season.season
-            if not self.year: self.year = season.year
+    @property
+    def season(self):
+        if "season" in self.stats and self.stats['season']:
+            return self.stats['season']
+        return extractseasonfromfilename(self.record.file).season
+    @property
+    def year(self):
+        if "year" in self.stats and self.stats['year']:
+            return self.stats['year']
+        return extractseasonfromfilename(self.record.file).year
+
+    @property
+    def version(self):
+        if "version" in self.stats and self.stats["version"] is not None:
+            return float(self.stats['version'])
 
     @property
     def animeseason(self):
@@ -173,30 +186,14 @@ class ShowStats():
             reader = csv.DictReader(f)
             return ShowStats(shows = list(reader), idvalue = MASTERIDVALUE)
 
-    def __init__(self, table = None, record = None, *lookupvalues):
+    def __init__(self, table = None, record = None):
         self._table = table
         self.record = record
         shows = table.todicts(keyfactory = keyfactory)
         ## Remove headers
         headers = shows.pop(0)
-        lookupvalue = None
-        for lookup in lookupvalues:
-            klookup = keyfactory(lookup)
-            if klookup in headers:
-                lookupvalue = klookup
-                break
-        if not lookupvalue:
-            for lookup in [self.SHOWIDVALUE,self.MASTERIDVALUE,self.NAMEVALUE,self.ONAMEVALUE]:
-                klookup = keyfactory(lookup)
-                if klookup in headers:
-                    lookupvalue = klookup
-                    break
-        if not lookupvalue:
-            raise ValueError("Could not determine lookup value for Show Stats")
-        ## check for originalid (required)
-        if "originalid" not in headers:
-            for show in shows: show['originalid'] = show[lookupvalue]
-        shows = {show[lookupvalue]:Show(self,**show) for show in shows if show[lookupvalue]}
+        
+        shows = {show[self.MASTERIDVALUE]:Show(self,**show) for show in shows if show[self.MASTERIDVALUE]}
         self._shows=shows
     @property
     def table(self):
@@ -317,6 +314,113 @@ class Show():
     def __str__(self):
         return f"Season Show: {self.name}"
 
+class HypeList():
+    NAMEHEADER = "name"
+    LASTHEADER = "lastlist"
+    def __init__(self,table,week):
+        self._table = table
+        self.week = week
+
+    @property
+    def rows(self):
+        ## First index is keys()
+        return self.table.todicts(keyfactory = keyfactory)[1:]
+
+    @property
+    def table(self):
+        return self._table
+
+class HypeListV1(HypeList):
+    """ HypeListV1:
+
+        Used for Spreadsheet version prior to Version 4.
+
+        Format:
+            Last List           | Name              | Occurences
+            -----------------------------------------------------
+            Prev. Week Rank 1   | Curr. Week Rank 1 | Number of Prev. Occurences of Curr. Week Rank 1
+            Prev. Week Rank 2   | Curr. Week Rank 2 | Number of Prev. Occurences of Curr. Week Rank 2
+            ... etc
+
+        When the table is read as a dict (using alcustoms.EnhancedTable.todicts()),the result is:
+        [   ["Last List", "Name", "Occurences"], ## Table Keys
+            {"Last List": "Prev. Week Rank 1", "Name": "Curr. Week Rank 1", "Occurences": "Number of Prev. Occurences of Curr. Week Rank 1"},
+            {"Last List": "Prev. Week Rank 2", "Name": "Curr. Week Rank 2", "Occurences": "Number of Prev. Occurences of Curr. Week Rank 2"},
+            ... etc
+            ]
+
+        Current Hypelist is therefore row comprehension for "Name" where the value is not Blank (None)
+        Previous Hypelist is likewise row comprehension for "Last List" where the value is not Blank (None)
+    """
+    def __init__(self, table, week):
+        super().__init__(table, week)
+
+    @property
+    def hypelist(self):
+        return[row[self.NAMEHEADER] for row in self.rows if row[self.NAMEHEADER]]
+        
+    @property
+    def history(self):
+        return [row[self.LASTHEADER] for row in self.rows if row[self.LASTHEADER]]
+
+    def rank(self,show):
+        """ Returns the Rank on the current HypeList of the given show (None if the show is not on the hypelist) """
+        if isinstance(show,Episode):
+            show = show.name
+        if show in self.hypelist: return self.hypelist.index(show)+1
+        return None
+
+class HypeListv4(HypeList):
+    """ HypelistV4:
+
+        Used for Spreadsheet Version 4 (current version). In this version, Hypelist and Hypelist
+            History are split between two tables.
+
+        Hypelist Format:
+            OriginalID  | Name          | Occurences
+            -------------------------------------------------------------------
+            Rank 1 OID  | Rank 1 Name   | Number of Prev. Occurences of Rank 1
+            Rank 2 OID  | Rank 2 Name   | Number of Prev. Occurences of Rank 2
+            ... etc
+
+        Hyplist History Format:
+            OriginalID              | Name                      | This Week's Rank
+            ----------------------------------------------------------------------------------------
+            Prev. Week Rank 1 OID   | Prev. Week Rank 1 Name    | Episode Rank of Prev. Week Rank 1
+            Prev. Week Rank 2 OID   | Prev. Week Rank 2 Name    | Episode Rank of Prev. Week Rank 2
+            ... etc
+
+        
+    """
+    OIDHEADER = "originalid"
+    NAMEHEADER = "name" 
+    LASTHEADER = None
+
+    def __init__(self, table, week, historytable):
+        super().__init__(table, week)
+        self._historytable = historytable
+
+    @property
+    def hypelist(self):
+        return self.rows
+
+    @property
+    def history(self):
+        return self._historytable.todicts(keyfactory = keyfactory)[1:]
+
+    def rank(self, show):
+        if isinstance(show, Episode):
+            show = int(show.originalid)
+        if isinstance(show, int):
+            show = str(show)
+            header = self.OIDHEADER
+        elif isinstance(show, str):
+            header = self.NAMEHEADER
+        for i,row in enumerate(self.hypelist, start=1):
+            if row[header]==show:
+                return i
+        return None
+
 class RankingSheet():
     RANKHEADER="rank"
     NEWRANKHEADER="newrank"
@@ -337,10 +441,7 @@ class RankingSheet():
         self._table = table
         self._record = record
         self.weeknumber=int(WEEKRE.search(table.displayName).group("number"))
-        if hypelist:
-            self.hypelist = HypeList(hypelist,self)
-        else: self.hypelist = None
-        #print(self.weeknumber,self.hypelist)
+        self.hypelist = None
 
         self.shows=dict()
         ## Index-0 of todicts is keys()
@@ -364,22 +465,17 @@ class RankingSheet():
                     if not seasonid:
                         seasonid = showstat.seasonid
 
+            
             rank = show[self.RANKHEADER]
+
             ranktotal = show[self.NEWRANKHEADER]
             episode = show[self.EPISODEHEADER]
             hypelistocc = show[self.HYPEOCCURENCEHEADER]
-            hypelistrank = None
             if name:
                 show = Episode(originalid=originalid,seasonid = seasonid, name=name,week=self,
                                          rank=rank,ranktotal=ranktotal,episode=episode,
                                          hypelistocc=hypelistocc)
                 self.shows[name] = show
-            if self.hypelist:
-                show.hypelistrank = self.hypelist.rank(show)
-                if show.hypelistrank:
-                    show.hypelistocc += 1
-        #if self.hypelist:
-        #    print([(show,show.hypelistrank) for show in self.shows.values() if self.hypelist.rank(show)])
 
     @property
     def table(self):
@@ -415,33 +511,25 @@ class RankingSheet():
         BASE,CEIL = 0,1
         return BASE + ( (episode.rank - minrank) * (CEIL - BASE) ) / ( maxrank - minrank)
 
-class HypeList():
-    NAMEHEADER = "name"
-    LASTHEADER = "lastlist"
-    def __init__(self,table,week):
-        self._table = table
-        self.week = week
+class RankingSheetV1(RankingSheet):
+    """ Ranking Sheet for Record Versions prior to 4"""
+    HYPELIST = HypeListV1
+    def __init__(self, table, hypelist, record):
+        super().__init__(table, hypelist, record)
 
-        ## First index is keys()
-        rows = self.table.todicts(keyfactory = keyfactory)[1:]
-        self.hypelist = [row[self.NAMEHEADER] for row in rows if row[self.NAMEHEADER]]
-        #print("Full Hypelist: ", self.hypelist)
-        self.history = [row[self.LASTHEADER] for row in rows if row[self.LASTHEADER]]
+        if hypelist:
+            self.hypelist = self.HYPELIST(hypelist,self)
 
-    @property
-    def table(self):
-        return self._table
-
-    def rank(self,show):
-        """ Returns the Rank on the current HypeList of the given show (None if the show is not on the hypelist) """
-        if isinstance(show,Episode):
-            show = show.name
-        if show in self.hypelist: return self.hypelist.index(show)+1
-        return None
-
+class RankingSheetV4(RankingSheet):
+    """ Ranking Sheet for Record Version 4 (current version) """
+    HYPELIST = HypeListv4
+    def __init__(self,table,hypelist, record, hypehistory):
+        super().__init__(table, hypelist, record)
+        if hypelist:
+            self.hypelist = self.HYPELIST(hypelist, self, hypehistory)
 
 class Episode():
-    def __init__(self,originalid,name,week,rank,ranktotal,episode,hypelistocc=0,hypelistrank=None, seasonid = None):
+    def __init__(self,originalid,name,week,rank,ranktotal,episode,hypelistocc=0,seasonid = None):
         self.originalid = originalid
         self.seasonid = seasonid
         self.name=name
@@ -450,7 +538,11 @@ class Episode():
         self.ranktotal=ranktotal
         self.episodenumber=episode
         self.hypelistocc=hypelistocc
-        self.hypelistrank=hypelistrank
+
+    @property
+    def hypelistrank(self):
+        if self.week.hypelist:
+            return self.week.hypelist.rank(self)
 
     @property
     def normalizedrank(self):

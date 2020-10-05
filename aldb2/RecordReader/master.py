@@ -151,6 +151,7 @@ def compile_directory(directory, statsfile = None, episodesfile = None):
         ## Old versions of RecordReader (pre-aldb2) used the OriginalID instead of the SeasonID
         ## SeasonID is preferred in aldb2, so we're going to attempt to find and update the seasonid
         serieslookup = MasterStat.list_from_SeasonRecord(record)
+        print("\tShows:",len(serieslookup))
         outstats.extend(serieslookup)
         serieslookup = {show.originalid:show for show in serieslookup}
 
@@ -158,6 +159,7 @@ def compile_directory(directory, statsfile = None, episodesfile = None):
         for episode in episodes:
             if not episode.seasonid and episode.originalid in serieslookup:
                 episode.seasonid = serieslookup[episode.originalid].seasonid
+        print("\tEpisodes:", len(episodes))
         outepisodes.extend(episodes)
         record.xlsx.close()
 
