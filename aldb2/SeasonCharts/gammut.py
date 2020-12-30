@@ -5,7 +5,9 @@ import re
 ## This Module
 from aldb2 import Core
 from aldb2 import SeasonCharts
-from aldb2.SeasonCharts import anilist,livechart ## anichart ## It seems that anichart may be an exact mirror of anilist at this point
+from aldb2.SeasonCharts import anilist
+## ,livechart ## livechart's new cloudflare protection is difficult to get by; livechart is not vital enough to put more effort into
+## ,anichart ## It seems that anichart may be an exact mirror of anilist at this point
 from aldb2.WebModules import myanimelist ## Used to get additional information about shows
 from aldb2.WebModules.myanimelist.scraping import getshowstats ## Used to get additional information about shows
 
@@ -17,7 +19,7 @@ from Levenshtein import distance as lev_distance
 DEFAULTOUTPUT = pathlib.Path("output_gammut.json").resolve()
 
 ## Order represents precedence when consolidating data
-MODULES = [livechart,anilist] ## anichart ## See above
+MODULES = [anilist, ] ## livechart, anichart ## See notes above
 
 ## Default Year
 YEAR = str(datetime.date.today().year)
@@ -111,7 +113,7 @@ def _findmissing_mal(show):
     if not show.medium and malinfo['type']:
         show.medium = malinfo['type']
     ## Hard overriding because
-    if "rating" in malinfo and "hentai" in malinfo['rating']:
+    if "rating" in malinfo and "hentai" in malinfo['rating'].lower():
         show.medium = "Hentai"
     if (runtime := malinfo.get('runtime')) and (runtime.seconds / 60 ) < 17:
         show.medium = "TV SHORT"

@@ -11,6 +11,8 @@
 *.userprefs
 .*
 
+*.egg-info/
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
