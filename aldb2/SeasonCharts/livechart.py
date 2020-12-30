@@ -91,6 +91,11 @@ def getshowsbyseason(season,year):
     session = alrequests.getbasicsession(useragent = True)
 
     soup = alrequests.GET_soup(url, session = session)
+    try:
+        if soup.ok: pass
+    except AttributeError: pass
+    else:
+        raise RuntimeError(f"Bad Response: {soup.status_code}: {soup.reason}")
     return parsesoup(soup, session = session)
 
 @sessiondecorator
