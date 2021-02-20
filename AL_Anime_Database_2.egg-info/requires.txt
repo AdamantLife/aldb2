@@ -1,9 +1,0 @@
-selenium
-click
-requests
-bs4
-pillow
-numpy
-matplotlib
-openpyxl
-python-Levenshtein
