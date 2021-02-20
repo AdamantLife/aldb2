@@ -9,8 +9,8 @@ import warnings
 from aldb2.Anime import anime
 
 ## Custom Module
-from alcustoms import excel, filemodules ## Extension of openpyxl
-from alcustoms.excel import Tables
+import AL_Excel, filemodules ## Extension of openpyxl
+from AL_Excel import Tables
 
 
 
@@ -48,7 +48,7 @@ def extractseasonfromfilename(filename):
 class SeasonRecord():
     def __init__(self,file):
         self._file=file
-        xlsx=self.xlsx=excel.load_workbook(filename=str(file),data_only=True)
+        xlsx=self.xlsx=AL_Excel.load_workbook(filename=str(file),data_only=True)
         self._sheets={sheet:xlsx[sheet] for sheet in xlsx.sheetnames}
         self._recordstatssheet = None
         self._recordstats = None
@@ -135,7 +135,7 @@ class RecordStats():
         column = 1
         row = 1
         tableref = Tables.gettablesize(sheet,startcolumn = column, startrow = row)
-        table = excel.EnhancedTable(worksheet = sheet, displayName = "RecordStats", ref = tableref)
+        table = AL_Excel.EnhancedTable(worksheet = sheet, displayName = "RecordStats", ref = tableref)
         return table
     def __init__(self,table,record):
         self._table = table

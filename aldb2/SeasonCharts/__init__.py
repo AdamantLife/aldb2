@@ -6,6 +6,8 @@ import itertools
 import json
 import re
 import reprlib
+## This Module
+from aldb2.WebModules import JST
 ## Custom Module
 from alcustoms.methods import isiterable
 """
@@ -90,7 +92,7 @@ def buildseason(season,year):
 
 class Show():
     """ A generalized container for outputting standardized chart data """
-    def __init__(self, chartsource, season, japanese_title, romaji_title = "", english_title = "", additional_titles = None, medium = "TV", continuing = False, renewal = False, summary = "", tags = None, startdate = None, episodes = 0, runtime = 0, images = None, studios = None, links = None):
+    def __init__(self, chartsource, season, japanese_title, romaji_title = "", english_title = "", additional_titles = None, medium = "TV", continuing = None, renewal = None, summary = "", tags = None, startdate = None, episodes = 0, runtime = 0, images = None, studios = None, links = None):
         """ Creates a new standardized Show Object.
 
         chartsource is a list of chart sources for this show. Each element should be a tuple (chart name, show's id for the chart).
@@ -122,7 +124,6 @@ class Show():
 
         aseason,ayear = parseseason(season)
         if not aseason:
-            print(season)
             raise SeasonError
         self.season = buildseason(aseason,ayear)
         if japanese_title is None: japanese_title = ""
@@ -142,11 +143,16 @@ class Show():
         self.tags = [Tag(tag) for tag in tags]
 
         if isinstance(startdate,str):
-            startdate = datetime.datetime.strptime(startdate, DTFORMAT)
+            try:
+                startdate = datetime.datetime.strptime(startdate, DTFORMAT)
+            except:
+                startdate = datetime.datetime.strptime(startdate, DTFORMAT.rstrip("%z"))
         elif isinstance(startdate,(int,float)):
             startdate = datetime.datetime.fromtimestamp(startdate)
         if not isinstance(startdate,datetime.datetime) and not startdate is None:
             raise AttributeError(f"startdate should be datetime or None: {startdate}")
+        if startdate:
+            startdate = startdate.replace(tzinfo= JST)
         self.startdate = startdate
         if episodes is None:
             episodes = 0
@@ -154,7 +160,7 @@ class Show():
         self.episodes = episodes
         if runtime is None: runtime = 0
         runtime = int(runtime)
-        self.runtime = runtime
+        self.runtime = datetime.timedelta(minutes = runtime)
 
         if images is None: images = []
         ## In case user only submits one image
@@ -174,19 +180,21 @@ class Show():
             or any(not isinstance(link,(list,tuple)) for link in links)\
             or any(0 > len(link) > 2 for link in links)\
             or any(not isinstance(element,str) for link in links for element in link):
-            print(links)
             raise AttributeError("links must be None or a list of length-2 tuples containing strings")
         links = [(site.lower().title(),link) for site,link in links]
         self.links = sorted(set(links), key = lambda link: links.index(link))
 
     def serialize(self):
         """ Makes a json-valid serialization of the Show """
+        runtime = self.runtime
+        if isinstance(runtime, datetime.timedelta):
+            runtime = runtime.total_seconds() / 60
         return dict(chartsource=self.chartsource, season=self.season,
                     japanese_title=self.japanese_title, romaji_title = self.romaji_title,
                     english_title = self.english_title, additional_titles = self.additional_titles,
                     medium = self.medium, continuing = self.continuing, renewal = self.renewal, summary = self.summary,
-                    tags = [tag.serialize() for tag in self.tags], startdate = self.startdate.strftime(DTFORMAT),
-                    episodes = self.episodes, runtime = self.runtime, images = self.images, studios = self.studios, links = self.links)
+                    tags = [tag.serialize() for tag in self.tags], startdate = self.startdate.strftime(DTFORMAT) if self.startdate else None,
+                    episodes = self.episodes, runtime = runtime, images = self.images, studios = self.studios, links = self.links)
 
     def __eq__(self,other):
         if isinstance(other,Show):
@@ -215,7 +223,10 @@ class Show():
                         self.additional_titles.append(title)
                 ## We assume that "TV" is the default, therefore we update if we have TV and other contradicts us
                 if self.medium == "TV" and other.medium != "TV":
-                    self.medium = other.medium   
+                    self.medium = other.medium
+                ## Hentai takes precedence over all other mediums (to assist filtering)
+                if "hentai" in other.medium.lower():
+                    self.medium = other.medium
                 ## if continuing = True takes precedence
                 self.continuing = self.continuing or other.continuing
                 ## if renewal = True takes precedence
@@ -243,7 +254,7 @@ class Show():
                 ## Assume that the highest episodes number is the most accurate
                 self.episodes = max(self.episodes,other.episodes)
                 ## Assume that the highest runtime is the most accurate
-                self.runtime = max(self.runtime if self.runtime else 0, other.runtime if other.runtime else 0)
+                self.runtime = max(self.runtime if self.runtime else datetime.timedelta(), other.runtime if other.runtime else datetime.timedelta())
                 ## There should never be duplicates, but we'll check anyway
                 for image in other.images:
                     if image not in self.images: 
@@ -345,7 +356,7 @@ def save_as_csv(shows, filename, include_spoilers = False):
         if include_spoilers: tags = show.tags
         else: tags = [tag for tag in show.tags if not tag.spoiler]
         out.append(", ".join(tag.tag for tag in tags))
-        out.extend([show.startdate.isoformat(), show.episodes, show.runtime, ", ".join(show.images), ", ".join(show.studios)])
+        out.extend([show.startdate.isoformat() if show.startdate else None, show.episodes, show.runtime, ", ".join(show.images), ", ".join(show.studios)])
         ## We're going to handle links separately
         showlinks.append(show.links)
         sites.extend(site for site,link in show.links)

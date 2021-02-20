@@ -6,10 +6,11 @@ import re
 from aldb2 import Core
 from aldb2 import SeasonCharts
 from aldb2.SeasonCharts import anilist
+from aldb2.SeasonCharts import mal
 ## ,livechart ## livechart's new cloudflare protection is difficult to get by; livechart is not vital enough to put more effort into
 ## ,anichart ## It seems that anichart may be an exact mirror of anilist at this point
 from aldb2.WebModules import myanimelist ## Used to get additional information about shows
-from aldb2.WebModules.myanimelist.scraping import getshowstats ## Used to get additional information about shows
+from aldb2.WebModules.myanimelist import scraping as malscraping ## Used to get additional information about shows
 
 ## Third Party
 from Levenshtein import distance as lev_distance
@@ -19,7 +20,7 @@ from Levenshtein import distance as lev_distance
 DEFAULTOUTPUT = pathlib.Path("output_gammut.json").resolve()
 
 ## Order represents precedence when consolidating data
-MODULES = [anilist, ] ## livechart, anichart ## See notes above
+MODULES = [anilist, mal ] ## livechart, anichart ## See notes above
 
 ## Default Year
 YEAR = str(datetime.date.today().year)
@@ -86,8 +87,16 @@ def findmissing_gammut(shows):
     for show in shows:
         ## Used to check if mal made a change
         show_medium = show.medium
-        ## Mal is now used unconditionally (not only for missing data)
-        _findmissing_mal(show)
+        ## Shows from the MAL chart call findmissing_showstats while they are gathered
+        if mal.CHARTNAME not in [chartname for (chartname, chartid) in show.chartsource]:
+            ## Mal is now used unconditionally (not only for missing data)
+            def pipe(output, verbose = False):
+                if not verbose or VERBOSE and verbose:
+                    echo(output)
+            malscraping.findmissing_showstats(show, pipe = pipe)
+        else:
+            ## MAL is a reliable source, so make sure the next test fails
+            show_medium = "MAL"
         ## We're now double-checking all show mediums that aren't
         ## parsed from mal
         if not show.medium or show_medium == show.medium:
@@ -95,29 +104,7 @@ def findmissing_gammut(shows):
             ## Only overwrite show.medium if _findmissing_showtype could determine type
             if show_medium:
                 show.medium = show_medium
-    return shows
-
-def _findmissing_mal(show):
-    """ Uses MAL (if available) to fill in whatever info it can """
-    ids = [url for link in show.links if (url := myanimelist.parse_siteid(link[1]))]
-    malinfo = None
-    for link in ids:
-        try:
-            echo(f">>> {show.romaji_title}({link})")
-            malinfo = getshowstats(link)
-        except Exception as e:
-            echo(f">>> Failed to get MAL info for: {show.romaji_title if show.romaji_title else show.english_title}({link})")
-            if VERBOSE: echo(traceback.format_exc())
-        if malinfo: break
-    if not malinfo: return
-    if not show.medium and malinfo['type']:
-        show.medium = malinfo['type']
-    ## Hard overriding because
-    if "rating" in malinfo and "hentai" in malinfo['rating'].lower():
-        show.medium = "Hentai"
-    if (runtime := malinfo.get('runtime')) and (runtime.seconds / 60 ) < 17:
-        show.medium = "TV SHORT"
-
+    return shows   
 
 
 def _findmissing_showtype(show):
@@ -209,9 +196,10 @@ def remove_ero(shows):
     blackliststudios = ["Fancy Realize Media",]
     def filterEro(show):
         """ Return False if show is suspected of being hentai """
+        showtitle = show.romaji_title or show.english_title or show.japanese_title
         ## Shows explicitly marked as hentai
         if show.medium and show.medium.lower() == "hentai":
-            echo(f"> Filtering: {show.romaji_title} due to being labeled as hentai")
+            echo(f"> Filtering: {showtitle} due to being labeled as hentai")
             return False
         desc = show.summary.lower()
         ## Check for shows based on either "ero* game" or "CG":
@@ -220,15 +208,15 @@ def remove_ero(shows):
         if (research := regex.search(desc)):
             if research.group(1) == "CG":
                 if any([term in desc for term in ["sex","rape","molest", "chikan"]]):
-                    echo(f"> Filtering: {show.romaji_title} due to explicit cg set")
+                    echo(f"> Filtering: {showtitle} due to explicit cg set")
                     return False
             else:
-                echo(f"> Filtering: {show.romaji_title} due to being based on erotic game")
+                echo(f"> Filtering: {showtitle} due to being based on erotic game")
                 return False
         ## Filter for blacklisted studios
         ## Outside chance of being wrong, but not too likely afaict
         if any(black in show.studios for black in blackliststudios):
-            echo(f"> Filtering: {show.romaji_title} due to blacklisted animation studio")
+            echo(f"> Filtering: {showtitle} due to blacklisted animation studio")
             return False
         return True
     return list(filter(filterEro, shows))
@@ -236,8 +224,9 @@ def remove_ero(shows):
 def remove_shorts(shows):
     """ Removes all shows with medium "shorts" or "TV_SHORT" from the output """
     def filterShorts(show):
+        showtitle = show.romaji_title or show.english_title or show.japanese_title
         if show.medium and show.medium.lower() in ["shorts", "tv_short", "tv short"]:
-            echo(f"> Filtering: {show.romaji_title}")
+            echo(f"> Filtering: {showtitle}")
             return False
         return True
     return list(filter(filterShorts,shows))
@@ -245,8 +234,9 @@ def remove_shorts(shows):
 def remove_movies(shows):
     """ Removes all shows with medium "Movie" from the output """
     def filterMovies(show):
+        showtitle = show.romaji_title or show.english_title or show.japanese_title
         if show.medium and show.medium.lower() in ["movie",]:
-            echo(f"> Filtering: {show.romaji_title}")
+            echo(f"> Filtering: {showtitle}")
             return False
         return True
     return list(filter(filterMovies,shows))
@@ -319,8 +309,6 @@ if __name__ == "__main__":
             """ Gathers shows from the internet and saves them to cache """
             echo(f"running gammut for {season.season} {season.year} Season")
             shows = run_gammut(season = season.season,year = season.year)
-            echo("consolidating gammut")
-            shows = consolidate_gammut(shows)
             echo("saving shows")
             SeasonCharts.serialize_shows(shows, cachefile)
             process()
@@ -329,10 +317,12 @@ if __name__ == "__main__":
             """ Loads the cache, processes the shows, and saves them to another cache file """
             echo('loading shows')
             shows = SeasonCharts.load_serialized(cachefile)
-            echo("gathering extra info")
-            shows = findmissing_gammut(shows)
+            echo("consolidating gammut")
+            shows = consolidate_gammut(shows)
             echo("consolidating duplicates")
             shows = consolidate_duplicates(shows)
+            echo("gathering extra info")
+            shows = findmissing_gammut(shows)
             echo("saving processed results")
             SeasonCharts.serialize_shows(shows, processfile)
             output()

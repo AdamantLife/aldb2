@@ -10,4 +10,4 @@ def getseason(date = None):
         raise TypeError("date must be datetime.datetime or datetime.date object")
     month = date.month
     index = month // 4
-    return ["Winter","Spring","Summer","Fall"].index(index)
+    return ["Winter","Spring","Summer","Fall"][index]
