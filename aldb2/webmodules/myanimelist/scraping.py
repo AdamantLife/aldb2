@@ -11,12 +11,13 @@ import functools                            ## Utility
 import json                                 ## Stat Scraping
 import pathlib                              ## Stat Scraping
 import re                                   ## Stat Scraping
-import time                                 ## 
+import traceback                            ## Error Output for findmissing_showstats
 ## This Library
 from aldb2 import WebModules                ## Stat Scraping (Timezones)
 from aldb2.WebModules import myanimelist    ## General
 from aldb2.Core import core as coremodules  ## Stat Scraping
-from aldb2.Core import sql                  ## Stat Scraping
+from aldb2.Core import sql, getseason       ## Stat Scraping, Determine Premiere Season if Aired is not available
+from aldb2.Anime.anime import parseanimeseason_toobject   ## Season Utilities
 ## Custom Module
 from alcustoms import decorators            ## Utility
 from alcustoms import web                   ## Whole Module
@@ -74,6 +75,12 @@ def getanimesoup(url,session = None):
     """ Returns the BSoup for the MAL anime page with the given MAL Anime ID or url. """
     return alrequests.GET_soup(url)
 
+def joinstring(sibling):
+    try:
+        return " ".join(sibling.stripped_strings)
+    except:
+        return str(sibling)
+
 
 ##################################################
 """
@@ -106,7 +113,7 @@ class Scraper():
         return re.compile("\s*statistics\s*",re.IGNORECASE)
     @property
     def informationvalues_re(self):
-        return re.compile("(?P<category>type|episodes|status|aired|premiered|broadcast|producers|licensors|studios|source|genres|duration|rating)\s*:\s*(?P<value>.+)", re.IGNORECASE)
+        return re.compile("(?P<category>type|episodes|status|aired|airing|premiered|broadcast|producers|licensors|studios|source|genres|duration|rating)\s*:\s*(?P<value>.+)", re.IGNORECASE)
 
     def parse_stats(self):
         try:
@@ -116,6 +123,8 @@ class Scraper():
             content = content.find("table").find("tr")
             ## Sidebar is first td in Row
             self.parse_sidebar(content.find("td"))
+            self.parse_related(self.soup)
+
         except AttributeError as e:
             ## print(self.resp.ok)
             ## print(self.resp.text)
@@ -125,11 +134,6 @@ class Scraper():
     def parse_sidebar(self, sidebar):
         ## Parsing Methods
         ## Primary code below double hash line
-        def joinstring(sibling):
-            try:
-                return " ".join(sibling.stripped_strings)
-            except:
-                return str(sibling)
 
         def parse_titles(sidebar):
             alt_titles_header = sidebar.find("h2", string=self.alt_titles_re)
@@ -164,7 +168,7 @@ class Scraper():
                 if (research := self.informationvalues_re.search(text)):
                     key = research.group('category').lower()
                     value = research.group('value')
-                    if key == "aired":
+                    if key in ["aired","airing"]:
                         if (firstepisode := re.compile("\s*(.*?)\s+to.*$", re.IGNORECASE).search(value)):
                             ## Sometimes "aired" is vague (i.e.- May, 2020 to ?)
                             try:
@@ -199,8 +203,6 @@ class Scraper():
                         
             raise RuntimeError("Could not locate Statistics Header")
 
-
-
         ######################
         ######################
         
@@ -209,9 +211,55 @@ class Scraper():
         statistics = parse_information(information)
         ## TODO: parse statistics
 
+    def parse_related(self, soup):
+        relations = {}
+        related = soup.find(class_="anime_detail_related_anime")
 
+        if related:
+            """Note: related table is an absolute mess:
 
-        
+            Sometimes it is misformatted like this:
+                <table>
+                    <tr> <== Should be <tbody>
+                        <tr><td>[...etc]</td></tr>
+                        <tr><td>[...etc]</td></tr>
+                    </tr>
+                </table>
+
+            Othertimes it is misformatted like this:
+                <table>
+                    <tr>
+                        <td>[Category:]</td>
+                        <td>[List of Links]</td>
+                        <tr> <== Category Rows are nested within themselves
+                            <td>[Category:]</td>
+                            <td>[List of Links]</td>
+                        </tr>
+                    </tr>
+                </table>
+
+            Hence why we we're just going to iterfind categories and then iterfind values
+            """
+            ## We are assuming that all categories have "fw-n" as a class (font-weight: 400!important)
+            CATCLASS = "fw-n"
+            categories = related("td", class_ = CATCLASS)
+            ## Check the next, un-processed TD to find siblings that contain links
+            for category in categories:
+                animes = []
+                next_td = category.find_next_sibling("td")
+
+                ## Check the next <td>: if it is not a Category, add it to animes
+                while next_td and CATCLASS not in next_td['class']:
+                    links = next_td("a")
+                    for link in links:
+                        animes.append((link['href'], joinstring(link)))
+
+                    next_td = next_td.find_next_sibling("td")
+                
+                ## Done with current category
+                relations[joinstring(category).rstrip(":")] = animes
+
+        self.stats['relations'] = relations
 
 """ Useful Info
 
@@ -228,7 +276,68 @@ def getshowstats(url,session = None):
     return scraper.stats
 
 
+def findmissing_showstats(show, url = None, session = None, pipe = None):
+    """
+        Fills in info that is often missing from Charts (may be updated in the future to compare all info).
+
+        Pipe- print output: currently used for interfacing with SeasonCharts.gammut
+    """
+    if pipe is None:
+        def pipe(output, verbose = False):
+            pass
+    if not url:
+        ids = [url for link in show.links if (url := myanimelist.parse_siteid(link[1]))]
+        malinfo = None 
+        for link in ids:
+            try:
+                pipe(f">>> {show.english_title or show.romaji_title or show.japanese_title}({link})")
+                malinfo = getshowstats(link, session = session)
+            except Exception as e:
+                pipe(f">>> Failed to get MAL info for: {show.romaji_title if show.romaji_title else show.english_title}({link})")
+                pipe(traceback.format_exc(), verbose = True)
+            if malinfo: break
+    else:
+        malinfo = getshowstats(url)
+
+    if not malinfo: return
+
+    if not show.japanese_title and malinfo.get("japanese_title"):
+        show.japanese_title = malinfo['japanese_title']
+
+    for name in malinfo.get("additional_titles",[]):
+        if name not in show.additional_titles:
+            show.additional_titles.append(name)
+
+    if not show.startdate and malinfo.get("first_episode"):
+        show.startdate = malinfo['first_episode'].replace(tzinfo = WebModules.JST)
+
+    ## NOTE: for both continuing and renewal, we always take True if possible
+    if (premiered := malinfo.get("premiered")) or (first_episode := malinfo.get("first_episode")):
+        if not premiered:
+            premiered = getseason(first_episode) + f"-{first_episode.year}"
+        if (continuing := parseanimeseason_toobject(premiered) < parseanimeseason_toobject(show.season)):
+            show.continuing = continuing
+
+    if (renewal := bool(malinfo['relations'].get("Prequel"))):
+        show.renewal = renewal
+
+    if not show.runtime and malinfo.get("runtime"):
+        show.runtime = malinfo['runtime']
+
+    if not show.medium and malinfo['type']:
+        show.medium = malinfo['type']
+
+    ## Hard overriding the next two medium types
+    print((runtime := malinfo.get('runtime')), (runtime.total_seconds / 60 ), (runtime.total_seconds / 60 ) < 17, runtime and (runtime.total_seconds / 60 ) < 17)
+    if (runtime := malinfo.get('runtime')) and ((runtime.total_seconds / 60 ) < 17):
+        show.medium = show.medium + " SHORT"
+
+    if ("rating" in malinfo and "hentai" in malinfo['rating'].lower()) or "hentai" in [genre.lower() for genre in malinfo['genres']]:
+        show.medium = "Hentai"
+
+
 if __name__ == "__main__":
     from alcustoms.web.requests import CachedSession
-    print(getshowstats("https://myanimelist.net/anime/40221/Kami_no_Tou", session = CachedSession()))
-
+    print((malinfo := getshowstats("https://myanimelist.net/anime/80", session = CachedSession())))
+    for cat,vals in malinfo['relations'].items():
+        print(cat, len(vals))
