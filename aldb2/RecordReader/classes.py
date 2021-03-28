@@ -9,7 +9,8 @@ import warnings
 from aldb2.Anime import anime
 
 ## Custom Module
-import AL_Excel, filemodules ## Extension of openpyxl
+from alcustoms import filemodules
+import AL_Excel ## Extension of openpyxl
 from AL_Excel import Tables
 
 
@@ -342,7 +343,7 @@ class HypeListV1(HypeList):
             Prev. Week Rank 2   | Curr. Week Rank 2 | Number of Prev. Occurences of Curr. Week Rank 2
             ... etc
 
-        When the table is read as a dict (using alcustoms.EnhancedTable.todicts()),the result is:
+        When the table is read as a dict (using AL_Excel.EnhancedTable.todicts()),the result is:
         [   ["Last List", "Name", "Occurences"], ## Table Keys
             {"Last List": "Prev. Week Rank 1", "Name": "Curr. Week Rank 1", "Occurences": "Number of Prev. Occurences of Curr. Week Rank 1"},
             {"Last List": "Prev. Week Rank 2", "Name": "Curr. Week Rank 2", "Occurences": "Number of Prev. Occurences of Curr. Week Rank 2"},

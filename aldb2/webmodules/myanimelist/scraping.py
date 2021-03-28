@@ -19,9 +19,9 @@ from aldb2.Core import core as coremodules  ## Stat Scraping
 from aldb2.Core import sql, getseason       ## Stat Scraping, Determine Premiere Season if Aired is not available
 from aldb2.Anime.anime import parseanimeseason_toobject   ## Season Utilities
 ## Custom Module
-from alcustoms import decorators            ## Utility
-from alcustoms import web                   ## Whole Module
-from alcustoms.web import requests as alrequests
+import al_decorators as decorators            ## Utility
+import AL_Web as web                   ## Whole Module
+from AL_Web import requests as alrequests
 ## Third Party
 import bs4                                  ## Whole Module
 
@@ -328,8 +328,7 @@ def findmissing_showstats(show, url = None, session = None, pipe = None):
         show.medium = malinfo['type']
 
     ## Hard overriding the next two medium types
-    print((runtime := malinfo.get('runtime')), (runtime.total_seconds / 60 ), (runtime.total_seconds / 60 ) < 17, runtime and (runtime.total_seconds / 60 ) < 17)
-    if (runtime := malinfo.get('runtime')) and ((runtime.total_seconds / 60 ) < 17):
+    if (runtime := malinfo.get('runtime')) and ((runtime.total_seconds() / 60 ) < 17):
         show.medium = show.medium + " SHORT"
 
     if ("rating" in malinfo and "hentai" in malinfo['rating'].lower()) or "hentai" in [genre.lower() for genre in malinfo['genres']]:
@@ -337,7 +336,7 @@ def findmissing_showstats(show, url = None, session = None, pipe = None):
 
 
 if __name__ == "__main__":
-    from alcustoms.web.requests import CachedSession
+    from AL_Web.requests import CachedSession
     print((malinfo := getshowstats("https://myanimelist.net/anime/80", session = CachedSession())))
     for cat,vals in malinfo['relations'].items():
         print(cat, len(vals))

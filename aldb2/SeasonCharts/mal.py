@@ -8,7 +8,7 @@ from aldb2.WebModules import myanimelist
 from aldb2.WebModules.myanimelist import scraping
 
 ## Third Party
-from alcustoms.web import requests as alrequests
+from AL_Web import requests as alrequests
 
 SEASONURL = "https://myanimelist.net/anime/season/{year}/{season}"
 
@@ -30,9 +30,7 @@ def getshows_fromseasonpage(season, year):
     r = session.get(url)
     soup = alrequests.response_to_soup(r)
     categories = soup(class_="seasonal-anime-list")
-    with open("test.html", 'w', encoding = "utf-8") as f:
-        f.write(str(soup))
-        
+           
 
     for cat in categories:
 
