@@ -9,8 +9,8 @@ import warnings
 ## Third Party
 import bs4
 ## Custom Module
-from alcustoms import web
-from alcustoms.web import requests as alrequests
+import AL_Web as web
+from AL_Web import requests as alrequests
 from aldb2 import SeasonCharts
 
 CHARTNAME = "Livechart"

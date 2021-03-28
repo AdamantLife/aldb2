@@ -1,3 +1,5 @@
+from click import echo
+
 ## Builtin
 import datetime
 import pathlib
@@ -21,9 +23,6 @@ DEFAULTOUTPUT = pathlib.Path("output_gammut.json").resolve()
 
 ## Order represents precedence when consolidating data
 MODULES = [anilist, mal ] ## livechart, anichart ## See notes above
-
-## Default Year
-YEAR = str(datetime.date.today().year)
 
 ## Dev Mode
 VERBOSE = False
@@ -104,6 +103,11 @@ def findmissing_gammut(shows):
             ## Only overwrite show.medium if _findmissing_showtype could determine type
             if show_medium:
                 show.medium = show_medium
+        ## Make sure shorts are noted
+        if "short" not in show.medium.lower()\
+            and show.runtime and show.runtime.total_seconds()\
+            and show.runtime.total_seconds()< (60*17):
+            show.medium += " Short"
     return shows   
 
 
@@ -186,9 +190,28 @@ def consolidate_duplicates_malid(shows):
 
 def consolidate_duplicates_titles(shows):
     """ Further consolidates the list by looking more closely at the titles """
-
-    get_lev_distance(shows)
-    return shows
+    output = []
+    shows = list(shows)
+    while shows:
+        show = shows.pop(0)
+        others = list(shows)
+        while others:
+            other = others.pop(0)
+            if any(name in [other.japanese_title, other.romaji_title, other.english_title]+other.additional_titles
+            for name in [show.japanese_title, show.romaji_title, show.english_title]+show.additional_titles if name):
+                shows.remove(other)
+                ## In order to combine shows, both need the same jp title
+                if other.japanese_title != show.japanese_title:
+                    if not show.japanese_title: show.japanese_title = other.japanese_title
+                    elif not other.japanese_title: other.japanese_title = show.japanese_title
+                    else:
+                        if other.japanese_title not in show.additional_titles: show.additional_titles.append(other.japanese_title)
+                        other.japanese_title = show.japanese_title
+                echo(f">>>> Consolidating {show.romaji_title} with {other.romaji_title}")
+                show&=other
+        output.append(show)
+    #get_lev_distance(output)
+    return output
 
 def remove_ero(shows):
     """ Checks for specific key phrases that indicate that a show is hentai but was not tagged as such on its chart """
@@ -196,10 +219,9 @@ def remove_ero(shows):
     blackliststudios = ["Fancy Realize Media",]
     def filterEro(show):
         """ Return False if show is suspected of being hentai """
-        showtitle = show.romaji_title or show.english_title or show.japanese_title
         ## Shows explicitly marked as hentai
-        if show.medium and show.medium.lower() == "hentai":
-            echo(f"> Filtering: {showtitle} due to being labeled as hentai")
+        if show.medium and "hentai" in show.medium.lower():
+            echo(f"> Filtering: {show.get_title()} due to being labeled as hentai")
             return False
         desc = show.summary.lower()
         ## Check for shows based on either "ero* game" or "CG":
@@ -208,15 +230,15 @@ def remove_ero(shows):
         if (research := regex.search(desc)):
             if research.group(1) == "CG":
                 if any([term in desc for term in ["sex","rape","molest", "chikan"]]):
-                    echo(f"> Filtering: {showtitle} due to explicit cg set")
+                    echo(f"> Filtering: {show.get_title()} due to explicit cg set")
                     return False
             else:
-                echo(f"> Filtering: {showtitle} due to being based on erotic game")
+                echo(f"> Filtering: {show.get_title()} due to being based on erotic game")
                 return False
         ## Filter for blacklisted studios
         ## Outside chance of being wrong, but not too likely afaict
         if any(black in show.studios for black in blackliststudios):
-            echo(f"> Filtering: {showtitle} due to blacklisted animation studio")
+            echo(f"> Filtering: {show.get_title()} due to blacklisted animation studio")
             return False
         return True
     return list(filter(filterEro, shows))
@@ -224,9 +246,8 @@ def remove_ero(shows):
 def remove_shorts(shows):
     """ Removes all shows with medium "shorts" or "TV_SHORT" from the output """
     def filterShorts(show):
-        showtitle = show.romaji_title or show.english_title or show.japanese_title
-        if show.medium and show.medium.lower() in ["shorts", "tv_short", "tv short"]:
-            echo(f"> Filtering: {showtitle}")
+        if show.medium and "short" in show.medium.lower():
+            echo(f"> Filtering: {show.get_title()}")
             return False
         return True
     return list(filter(filterShorts,shows))
@@ -234,13 +255,27 @@ def remove_shorts(shows):
 def remove_movies(shows):
     """ Removes all shows with medium "Movie" from the output """
     def filterMovies(show):
-        showtitle = show.romaji_title or show.english_title or show.japanese_title
         if show.medium and show.medium.lower() in ["movie",]:
-            echo(f"> Filtering: {showtitle}")
+            echo(f"> Filtering: {show.get_title()}")
             return False
         return True
     return list(filter(filterMovies,shows))
 
+def remove_short_runs(shows):
+    """ Removes shows with "half" seasons (less than 10 episodes) """
+    def filterShortRuns(show):
+        if show.episodes and show.episodes < 10:
+            print(f"> Filtering: {show.get_title()}")
+            return False
+        return True
+    return list(filter(filterShortRuns, shows))
+
+def label_netflix(shows):
+    for show in shows:
+        if "netflix" in [l.lower() for (l,url) in show.links]:
+            print(f"> Changing medium to Netflix for: {show.get_title()}")
+            show.medium = "Netflix"
+    return shows
 
 def main(season = None,year = None, output = DEFAULTOUTPUT):
     """ The complete process of gathering shows from a season
@@ -280,128 +315,3 @@ def validatemain(season,year,output):
         raise ValueError("output location already exists!")
     return season,year,output
 
-if __name__ == "__main__":
-    import click
-    from click import echo
-
-    from alcustoms.text.texttable import TextTable ## Used in Debug
-
-
-    CACHEFILE = pathlib.Path("output_gammut.json")
-    PROCESSFILE = pathlib.Path("process_gammut.json")
-    OUTPUTFILE = pathlib.Path("output_gammut.csv")
-    
-    ## Debug files
-    LEV_DEBUGFILE =pathlib.Path("debug_levenshtein_distance.txt")
-
-    @click.group()
-    def cli():
-        pass
-
-    @cli.command()
-    @click.option("--season","-s",default="Spring")
-    @click.option("--year","-y",default=YEAR)
-    @click.option("--removeEro", "-re", is_flag = True, default = True)
-    @click.option("--removeShorts", "-rs", is_flag = True, default = True)
-    @click.option("--removeMovies", "-rm", is_flag = True, default = True)
-    def run(season,year, removeero, removeshorts, removemovies):
-        def gather():
-            """ Gathers shows from the internet and saves them to cache """
-            echo(f"running gammut for {season.season} {season.year} Season")
-            shows = run_gammut(season = season.season,year = season.year)
-            echo("saving shows")
-            SeasonCharts.serialize_shows(shows, cachefile)
-            process()
-
-        def process():
-            """ Loads the cache, processes the shows, and saves them to another cache file """
-            echo('loading shows')
-            shows = SeasonCharts.load_serialized(cachefile)
-            echo("consolidating gammut")
-            shows = consolidate_gammut(shows)
-            echo("consolidating duplicates")
-            shows = consolidate_duplicates(shows)
-            echo("gathering extra info")
-            shows = findmissing_gammut(shows)
-            echo("saving processed results")
-            SeasonCharts.serialize_shows(shows, processfile)
-            output()
-
-        def output():
-            """ Loads the processed cache, customizes the final output, and saves them to csv """
-            echo("loading processed results")
-            shows = SeasonCharts.load_serialized(processfile)
-            if removeero:
-                echo("removing eros")
-                shows = remove_ero(shows)
-            if removeshorts:
-                echo("removing shorts")
-                shows = remove_shorts(shows)
-            if removemovies:
-                echo("removing movies")
-                shows = remove_movies(shows)
-            echo("writing to csv")
-            ## Writing to csv
-            SeasonCharts.save_as_csv(shows, outputfile)
-            echo("done")
-
-
-        from aldb2.Anime import anime
-        try:
-            season = anime.parseanimeseason_toobject(dict(season = season,year = year))
-        except:
-            echo("Invalid Season")
-            return
-
-        echo(f"Gather Shows for {season} Season")
-        processfile = PROCESSFILE.with_name(PROCESSFILE.stem+"-"+str(season)+PROCESSFILE.suffix)
-        cachefile = CACHEFILE.with_name(CACHEFILE.stem+"-"+str(season)+CACHEFILE.suffix)
-        outputfile = OUTPUTFILE.with_name(OUTPUTFILE.stem+"-"+str(season)+OUTPUTFILE.suffix)
-
-        def ask(item):
-            use = None
-            while use not in ["y","n"]:
-                use = input(f"{item}? (y/n)").lower()
-            return use == "y"
-                
-        def ask_use_delete_file(FILE, name):
-            if FILE.exists():
-                use = ask(f"Use {name}")
-                if not use:
-                    delete = ask(f"Delete {name}")
-                    if delete:
-                        FILE.unlink()
-                return use
-        
-        result = ask_use_delete_file(processfile, "processed cached results")
-        if result: return output()
-        
-        result = ask_use_delete_file(cachefile, "cached results")
-        if result: return process()
-
-        return gather()
-
-    @cli.command()
-    def config():
-        echo("hello")
-
-    @cli.command()
-    @click.argument("mode")
-    def debug(mode):
-        if mode == "lev_distance":
-            if not cachefile.exists():
-                raise ValueError("No Cached Shows: Call run first")
-            shows = SeasonCharts.load_serialized(cachefile)
-            get_lev_distance(shows)
-            output = ""
-            for show in shows:
-                rows = list(show.lev_distance.items())
-                ## Sort smallest distance > Larger Distance
-                rows = sorted(rows, key = lambda row: row[1])
-                table = TextTable(title = show.japanese_title, headers = ["Show", "Distance"], rows = rows)
-                output += str(table) + "\n"
-            with open(LEV_DEBUGFILE, 'w', encoding = "UTF-8") as f:
-                f.write(output)
-            echo(f"Log written to: {LEV_DEBUGFILE}")
-
-    cli()

@@ -9,8 +9,8 @@ import re
 from xml.etree import ElementTree as ET
 ## Custom Module
 from alcustoms.methods import isiterable
-from alcustoms import web
-from alcustoms.web import requests as alrequests
+import AL_Web as web
+from AL_Web import requests as alrequests
 
 #################################################################
 """

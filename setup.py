@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
 
     name="AL Anime Database 2",
-    version="1.0.0",
+    version="1.1.0",
     author="AdamantLife",
     author_email="contact.adamantmedia@gmail.com",
     description="V2 of the AnimeDatabase",
@@ -30,6 +30,13 @@ setuptools.setup(
         "numpy",
         "matplotlib",
         "openpyxl",
-        "python-Levenshtein"
-        ]
+        "python-Levenshtein",
+        "alcustoms @ git+https://github.com/AdamantLife/alcustoms",
+        "al-excel @ git+https://github.com/AdamantLife/AL_Excel",
+        "al-decorators @ git+https://github.com/AdamantLife/AL_Decorators",
+        "al-web @ git+https://github.com/AdamantLife/AL_Web",
+        ],
+        entry_points={
+          "console_scripts": ["gammut=aldb2.SeasonCharts.cli:cli"]
+      }
 )

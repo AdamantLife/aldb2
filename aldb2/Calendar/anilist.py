@@ -4,8 +4,7 @@ from aldb2.WebModules import anilist
 from aldb2.WebModules.anilist import graphql
 
 ## Custom Module
-from alcustoms import web
-from alcustoms.web import requests as alrequests
+from AL_Web import requests as alrequests
 
 
 
@@ -66,7 +65,7 @@ def getairingschedule(page = None, pageInfo = None):
     return airingschedule
 
 if __name__ == "__main__":
-    FILE = r"C:\Users\Reid\Dropbox\][Video Editing\AnimeLife\__Record SP2018.xlsx"
+    FILE = r"__Record SP2018.xlsx"
 
     SHOWS = None
 

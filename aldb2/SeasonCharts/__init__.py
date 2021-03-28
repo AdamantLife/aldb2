@@ -184,6 +184,9 @@ class Show():
         links = [(site.lower().title(),link) for site,link in links]
         self.links = sorted(set(links), key = lambda link: links.index(link))
 
+    def get_title(self):
+        return self.romaji_title or self.english_title or self.japanese_title
+
     def serialize(self):
         """ Makes a json-valid serialization of the Show """
         runtime = self.runtime

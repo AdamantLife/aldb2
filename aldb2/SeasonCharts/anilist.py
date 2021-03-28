@@ -7,8 +7,8 @@ from aldb2.WebModules import anilist,myanimelist
 from aldb2.WebModules.anilist import graphql
 
 ## Custom Module
-from alcustoms import web
-from alcustoms.web import requests as alrequests
+import AL_Web as web
+from AL_Web import requests as alrequests
 
 
 """ ALDB2 Integration at Bottom """
@@ -77,7 +77,7 @@ def graphql_getchartstats(season,year):
             romaji_title = titles["romaji"]
             english_title = titles['english']
             additional_titles = show['synonyms']
-            medium = show['format']
+            medium = "hentai" if show['isAdult'] else show['format']
             ## TODO continuing
             renewal = any(relation == graphql.SEQUEL for relation in relationtypes)
             summary = show['description']
@@ -123,7 +123,7 @@ def getchartstats_season(season,year):
         graphql.StudioNodes("name"),
         isMain = True
         )
-    seasonfields = ("id","idMal","format",titlefield,"episodes",startDatefield,trailerfield,relationsfield,linksfield,"hashtag","synonyms","description",tagsfield,imagefield,studiosfield)
+    seasonfields = ("id","idMal","format",titlefield,"episodes",startDatefield,trailerfield,relationsfield,linksfield,"hashtag","synonyms","description",tagsfield,imagefield,studiosfield,"isAdult")
     return getseasonmedia(season,year,*seasonfields,type = graphql.ANIME)
 
 def getseasonmedia(season,year,*fields,**filters):

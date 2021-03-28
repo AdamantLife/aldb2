@@ -1,6 +1,7 @@
 ## Custom Module
-from alcustoms import graphql_query,web
-from alcustoms.web import requests as alrequests
+from alcustoms import graphql_query
+import AL_Web as web
+from AL_Web import requests as alrequests
 from alcustoms.graphql_query import Enum,EnumList,DeferredField,Field,IntList,StrList
 
 """ GraphQL API Module
