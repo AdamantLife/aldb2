@@ -97,7 +97,7 @@ class Scraper():
         ##self.soup = alrequests.response_to_soup(self.resp)
         with MAL_LOCK:
             self.soup = getanimesoup(url,session)
-        self.stats = {}
+        self.stats = {"genres" : []}
 
     @property
     def alt_titles_re(self):
@@ -113,7 +113,7 @@ class Scraper():
         return re.compile("\s*statistics\s*",re.IGNORECASE)
     @property
     def informationvalues_re(self):
-        return re.compile("(?P<category>type|episodes|status|aired|airing|premiered|broadcast|producers|licensors|studios|source|genres|duration|rating)\s*:\s*(?P<value>.+)", re.IGNORECASE)
+        return re.compile("(?P<category>type|episodes|status|aired|airing|premiered|broadcast|producers|licensors|studios|source|genres|genre|duration|rating)\s*:\s*(?P<value>.+)", re.IGNORECASE)
 
     def parse_stats(self):
         try:
@@ -184,7 +184,7 @@ class Scraper():
                                 self.stats['airtime'] = t
                     elif key in ["producers", "licensors","studios"] and value.strip() != "None":
                         self.stats[key] = [p.strip() for p in value.split(",")]
-                    elif key == "genres":
+                    elif key in ["genres","genre"]:
                         ## Technically could try pattern matching to strip out repeats
                         ## but this seems simpler
                         ## Results should be spans with display:none

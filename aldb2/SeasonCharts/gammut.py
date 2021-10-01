@@ -6,6 +6,7 @@ import pathlib
 import re
 ## This Module
 from aldb2 import Core
+from aldb2.Anime.anime import AnimeSeason
 from aldb2 import SeasonCharts
 from aldb2.SeasonCharts import anilist
 from aldb2.SeasonCharts import mal
@@ -29,10 +30,19 @@ VERBOSE = False
 VERBOSE = True ## comment out
 import traceback ## comment out
 
-def run_gammut(season,year):
-    """ Runs the gammut of charts and returns a consolidated chart of standardized Show objects """
+def run_gammut(season,year, modules = None):
+    """ Runs the gammut of charts and returns a consolidated chart of standardized Show objects.
+
+        if modules is None, default, gammut.MODULES will be used. Otherwise, modules should be a
+        subset list of modules available in gammut.MODULES.
+    """
     out = []
-    for module in MODULES:
+    if not modules:
+        modules = list(MODULES)
+    else:
+        modules = [mod for mod in modules if mod in MODULES]
+        if not modules: raise ValueError("No valid modules found in modules list")
+    for module in modules:
         shows = module.getshowsbyseason(season,year)
         shows = module.convertshowstostandard(shows)
         out.extend(shows)
@@ -87,8 +97,8 @@ def findmissing_gammut(shows):
         ## Used to check if mal made a change
         show_medium = show.medium
         ## Shows from the MAL chart call findmissing_showstats while they are gathered
+        ## (so call use MAL for non-MAL shows)
         if mal.CHARTNAME not in [chartname for (chartname, chartid) in show.chartsource]:
-            ## Mal is now used unconditionally (not only for missing data)
             def pipe(output, verbose = False):
                 if not verbose or VERBOSE and verbose:
                     echo(output)
@@ -104,7 +114,7 @@ def findmissing_gammut(shows):
             if show_medium:
                 show.medium = show_medium
         ## Make sure shorts are noted
-        if "short" not in show.medium.lower()\
+        if show.medium and "short" not in show.medium.lower()\
             and show.runtime and show.runtime.total_seconds()\
             and show.runtime.total_seconds()< (60*17):
             show.medium += " Short"
@@ -305,7 +315,7 @@ def validatemain(season,year,output):
     if year is None:
         year = today.year
     seasonstring = SeasonCharts.buildseason(season,year)
-    season,year = SeasonChart.parseseason(seasonstring)
+    season,year = SeasonCharts.parseseason(seasonstring)
     if not isinstance(output,pathlib.Path):
         try:
             output = pathlib.Path(output)
@@ -314,4 +324,40 @@ def validatemain(season,year,output):
     if output != DEFAULTOUTPUT and output.exists():
         raise ValueError("output location already exists!")
     return season,year,output
+
+
+
+def get_single_show(malid: str, season: str, year:int,  charts:list = None)-> SeasonCharts.Show:
+    """ Gets stats for a single show from the given season and using the provided charts and/or malid.
+    
+        malid is the myanimelist site id for the show. It is required in order to determine which show to retrieve. 
+        season should be a valid season ("winter", "spring", "summer", "fall") and year should be an integer.
+        charts should be a list of modules based on the modules available in SeasonCharts/gammut. If not provided,
+        all modules will be used.
+    """
+    if charts:
+        charts = [mod for mod in charts if mod in MODULES]
+        if not charts:
+            raise ValueError("No valid modules in provided charts")
+    else:
+        charts = list(MODULES)
+
+    seasonstring = SeasonCharts.buildseason(season, year)
+    season, year = SeasonCharts.parseseason(seasonstring)
+
+    shows = run_gammut(season,year, modules = charts)
+    if not shows:
+        echo("No shows found with that malid")
+    shows = [show for show in shows if any(link for (site,link) in show.links if myanimelist.parse_siteid(link) == malid)]
+    if not shows:
+        echo("No shows found with that malid")
+    ## Consolidate into a single show
+    show = shows.pop(0)
+    for other in shows: show &= other
+    ## Convert back into list to keep using gammut functions
+    shows = [show,]
+    shows = findmissing_gammut(shows)
+    fname = f"show_{shows[0].get_title()}.csv"
+    SeasonCharts.save_as_csv(shows,fname)
+    echo(f"File saved to: {fname}")
 

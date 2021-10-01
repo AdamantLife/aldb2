@@ -6,7 +6,7 @@ from click import echo
 from aldb2 import SeasonCharts
 from aldb2.SeasonCharts import gammut
 
-from alcustoms.text.texttable import TextTable ## Used in Debug
+from AL_Text import TextTable ## Used in Debug
 
 ## Default Year
 YEAR = str(datetime.date.today().year)
@@ -117,6 +117,14 @@ def run(season,year, labelnetflix, removeero, removeshorts, removemovies, remove
     if result: return process()
 
     return gather()
+
+@cli.command()
+@click.argument("malid")
+@click.option("--season","-s",default="Spring")
+@click.option("--year","-y",default=YEAR)
+def runsingle(malid, season, year):
+    gammut.get_single_show(malid, season, year)
+    
 
 @cli.command()
 def config():

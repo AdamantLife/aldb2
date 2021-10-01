@@ -34,9 +34,13 @@ setuptools.setup(
         "alcustoms @ git+https://github.com/AdamantLife/alcustoms",
         "al-excel @ git+https://github.com/AdamantLife/AL_Excel",
         "al-decorators @ git+https://github.com/AdamantLife/AL_Decorators",
+        "al-text @ git+https://github.com/AdamantLife/AL_Text",
         "al-web @ git+https://github.com/AdamantLife/AL_Web",
         ],
         entry_points={
-          "console_scripts": ["gammut=aldb2.SeasonCharts.cli:cli"]
+          "console_scripts": [
+              "gammut=aldb2.SeasonCharts.cli:cli",
+              "compilemaster=aldb2.RecordReader.cli:compilemaster"
+              ]
       }
 )

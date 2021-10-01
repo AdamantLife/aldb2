@@ -5,7 +5,6 @@ import datetime
 import itertools
 import json
 import re
-import reprlib
 ## This Module
 from aldb2.WebModules import JST
 ## Custom Module
@@ -57,7 +56,7 @@ def parseseason(season):
     """ Returns a tuple (season:str [capitalized], year:str) if the season matches the Season Regex, otherwise returns a tuple (False, False) """
     try:
         seasonresearch = SEASONRE.search(season)
-        return seasonresearch.group("season").lower().capitalize(),seasonresearch.group("year")
+        return seasonresearch.group("season").lower().capitalize(),int(seasonresearch.group("year"))
     except: return False, False
 
 def buildseason(season,year):
@@ -398,4 +397,3 @@ def save_as_csv(shows, filename, include_spoilers = False):
         writer = csv.writer(f)
         writer.writerow(headers)
         writer.writerows(output)
-

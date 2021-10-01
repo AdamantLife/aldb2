@@ -125,11 +125,12 @@ class MasterEpisode():
 
 
 
-def compile_directory(directory, statsfile = None, episodesfile = None):
+def compile_directory(directory, statsfile = None, episodesfile = None, recurse = False):
     """ Compiles a directory of SeasonRecords into masterstats and masterepisodes files
     
         statsfile and episodesfile should be valid filename paths if they are provided.
         If not provided, they will be the module defaults (in the current work directory).
+        If recurse is True, will search each subdirectory for SeasonRecords (default is False).
     """
     directory = testfileobj(directory)
     if not directory.is_dir():
@@ -139,29 +140,38 @@ def compile_directory(directory, statsfile = None, episodesfile = None):
     if episodesfile is None:
         episodesfile = DEFAULTEPISODEFILE
 
-
-    recordfiles = classes.listvalidfilenames(directory)
-
-    ## Due to the potential memory overhead, we'll be doing records One-at-a-time (so we can close the file afterwards)
     outstats = list()
     outepisodes = list()
-    for file in recordfiles:
-        print(file)
-        record = classes.SeasonRecord(file)
-        ## Old versions of RecordReader (pre-aldb2) used the OriginalID instead of the SeasonID
-        ## SeasonID is preferred in aldb2, so we're going to attempt to find and update the seasonid
-        serieslookup = MasterStat.list_from_SeasonRecord(record)
-        print("\tShows:",len(serieslookup))
-        outstats.extend(serieslookup)
-        serieslookup = {show.originalid:show for show in serieslookup}
 
-        episodes = MasterEpisode.list_from_SeasonRecord(record)
-        for episode in episodes:
-            if not episode.seasonid and episode.originalid in serieslookup:
-                episode.seasonid = serieslookup[episode.originalid].seasonid
-        print("\tEpisodes:", len(episodes))
-        outepisodes.extend(episodes)
-        record.xlsx.close()
+    def check_directory(directory):
+        recordfiles = classes.listvalidfilenames(directory)
+
+        ## Due to the potential memory overhead, we'll be doing records One-at-a-time (so we can close the file afterwards)
+        for file in recordfiles:
+            print(file)
+            record = classes.SeasonRecord(file)
+            ## Old versions of RecordReader (pre-aldb2) used the OriginalID instead of the SeasonID
+            ## SeasonID is preferred in aldb2, so we're going to attempt to find and update the seasonid
+            serieslookup = MasterStat.list_from_SeasonRecord(record)
+            print("\tShows:",len(serieslookup))
+            outstats.extend(serieslookup)
+            serieslookup = {show.originalid:show for show in serieslookup}
+
+            episodes = MasterEpisode.list_from_SeasonRecord(record)
+            for episode in episodes:
+                if not episode.seasonid and episode.originalid in serieslookup:
+                    episode.seasonid = serieslookup[episode.originalid].seasonid
+            print("\tEpisodes:", len(episodes))
+            outepisodes.extend(episodes)
+            record.xlsx.close()
+        
+    def recursion(directory):
+        check_directory(directory)
+        for child in directory.iterdir():
+            if child.is_dir(): recursion(child)
+    
+    if recurse: recursion(directory)
+    else: check_directory(directory)
 
     if statsfile:
         save_masterstats(outstats, statsfile)
