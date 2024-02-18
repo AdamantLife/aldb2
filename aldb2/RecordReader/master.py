@@ -10,6 +10,7 @@
 ## Builtin
 import csv
 import pathlib
+import warnings
 
 ## This module
 from aldb2.Anime import anime
@@ -177,3 +178,24 @@ def compile_directory(directory, statsfile = None, episodesfile = None, recurse 
         save_masterstats(outstats, statsfile)
     if episodesfile:
         save_masterepisodes(outepisodes, episodesfile)
+
+def compile_firstepisodes(directory, output, recurse = False):
+    results = []
+    for record in classes.SeasonRecord.load_directory(directory, recurse = recurse):
+        if record.recordstats.version < 3:
+            continue
+        for week in record.weeks.values():
+            week: classes.RankingSheetV3
+            if not week.rounduptable: continue
+            rows = week.rounduptable.todicts()[1:]
+            seasonindex = record.recordstats.animeseason.seasonindex
+            for row in rows:
+                if row["OriginalID"]:
+                    row['SeasonIndex'] = seasonindex
+                    results.append(row)
+
+    with open(output, 'w', encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["SeasonIndex", "OriginalID", "Show", "Animation", "Art/Aesthetics", "Character/Story Investment", "Plot/World Building"], extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(results)
+    return

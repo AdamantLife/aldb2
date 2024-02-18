@@ -119,7 +119,8 @@ def stepanimeseason(animeseason,increment = 1):
 
 def sortbyanimeseason(animelist,reverse=False):
     """ Sorts a list of animes by their first animeseason """
-    return sorted(animelist, key = lambda anime: min(anime.animeseasons), reversed = reverse)
+    animelist.sort(key = lambda anime: min(anime.animeseasons), reversed = reverse)
+    return animelist
 
 def buildseasondict(season,year):
     """ Creates a correctly formatted season dict.
@@ -151,7 +152,7 @@ def buildseasondict(season,year):
         year = int(year)
     except:
         raise TypeError("Year must be an integer")
-    return dict(season = season, year = year)
+    return dict(season = season, year = int(year))
 
 class AnimeSeason():
     """ The representation of a single cour during a specific year: e.g- Fall 2017 """
@@ -162,8 +163,8 @@ class AnimeSeason():
         year should be an integer.
         """
         seasondict = buildseasondict(season,year)
-        self.season = seasondict["season"]
-        self.year = seasondict["year"]
+        self.season: str = seasondict["season"]
+        self.year:int = int(seasondict["year"])
 
     @property
     def seasonnumber(self):

@@ -191,7 +191,7 @@ The Ancient Magus' Bride
     import pprint
     SHOWS = linestolist(SHOWS)
     S1 = [show.strip() for show in SHOWS if show.strip()]
-    S2 = RECORD.showstats.getshowbyname(*S1)
+    S2 = [RECORD.showstats.getshowbyname(s) for s in S1]
     for s1,s2 in zip(S1,S2):
         if s2 is None:
             print(f"Could not find {s1} ({s2})")

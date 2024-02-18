@@ -5,9 +5,9 @@ class Series():
         self.series = series
 
 class Subseries():
-    def __init__(self, subseriesid, subseries, seriesid = None, series = None):
+    def __init__(self, subseriesid: int|None, subseries, seriesid = None, series = None):
         self.series = Series(seriesid = seriesid, series = series)
-        self.subseriesid = subseriesied
+        self.subseriesid = subseriesid
         self.subseries = subseries
 
 class Genre():

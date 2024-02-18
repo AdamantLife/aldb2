@@ -12,6 +12,9 @@ from AL_Web import requests as alrequests
 
 SEASONURL = "https://myanimelist.net/anime/season/{year}/{season}"
 
+def stripped_strings(ele):
+    return " ".join(ele.stripped_strings)
+
 def getshows_fromseasonpage(season, year):
     """ Current Query Method for getshowsbyseason """
     session = alrequests.getbasicsession()
@@ -34,23 +37,17 @@ def getshows_fromseasonpage(season, year):
 
     for cat in categories:
 
-        category = " ".join(cat.find(class_="anime-header").stripped_strings)
+        category = stripped_strings(cat.find(class_="anime-header"))
 
         for showele in cat(class_ = "seasonal-anime"):
 
             titleele = showele.find(class_ = "link-title")
-            engtitle = " ".join(titleele.stripped_strings)
+            engtitle = stripped_strings(titleele)
             mallink = titleele['href']
             malid = myanimelist.parse_siteid(mallink)
-
-            prodsrcele = showele.find(class_ = "prodsrc")
-            studio = " ".join(prodsrcele.find(class_ = "producer").stripped_strings)
-            episodes = None
-            if (epsmatch := EPSRE.search(" ".join(prodsrcele.find(class_ = "eps").stripped_strings))):
-                episodes = epsmatch.group("episodes")
             
             genresele = showele.find(class_ = "genres-inner")
-            genres = [" ".join(genre.stripped_strings) for genre in genresele(class_ = "genre")]
+            genres = [stripped_strings(genre) for genre in genresele(class_ = "genre")]
 
             try:
                 imageele = showele.find(class_ = "image")
@@ -61,14 +58,33 @@ def getshows_fromseasonpage(season, year):
                 raise e
 
             synopsisele = showele.find(class_ = "synopsis")
-            synopsis = " ".join(synopsisele.find(class_ = "preline").stripped_strings)
+            synopsis = stripped_strings(synopsisele.find(class_ = "preline"))
+
+            propseles = synopsisele(class_="property")
+            for property in propseles:
+                items = property.parent(class_="item")
+                prop = stripped_strings(property.find(class_="caption")).lower()
+                if prop.endswith("s"): prop = prop[:-1]
+                if prop == "studio":
+                    studios = [stripped_strings(studio) for studio in items]
+                elif prop == "theme":
+                    genres.extend([stripped_strings(theme) for theme in items])
+                elif prop == "demographic":
+                    genres.append(stripped_strings(items[0]))
+                elif prop == "source": pass
+                else:
+                    raise Warning(f"Unknown MAL List property: {prop}")
 
             infotopele = showele.find(class_ = "information")
             infoele = showele.find(class_ = "info")
+
+            episodes = None
+            if (epsmatch := EPSRE.search(stripped_strings(infoele))):
+                episodes = epsmatch.group("episodes")
             ## We can pull showtype from category
             startdate = None
             if (start := infoele.find(class_ = "remain-time")):
-                if (datematch := DATERE.search(" ".join(start.stripped_strings))):
+                if (datematch := DATERE.search(stripped_strings(start))):
                     startdate = datetime.datetime.strptime(datematch.group("datetime"),"%b %d, %Y, %H:%M")
                     if datematch.group("timezone") == "JST":
                         startdate.replace(tzinfo = WebModules.JST)
@@ -86,7 +102,7 @@ def getshows_fromseasonpage(season, year):
             shows.append(Show(malid, season = aseason,  english_title=engtitle,
             medium = medium, continuing = continuing,
             summary=synopsis, tags = genres, startdate= startdate,episodes= episodes, images = image,
-            studios = [studio,], links = [("Mal ID", mallink),]))
+            studios = studios, links = [("Mal ID", mallink),]))
 
     for show in shows:
         ## TODO!!!: right now the only link we're scraping is the mal link: if this changes, this code will break

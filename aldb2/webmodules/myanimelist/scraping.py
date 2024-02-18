@@ -75,11 +75,11 @@ def getanimesoup(url,session = None):
     """ Returns the BSoup for the MAL anime page with the given MAL Anime ID or url. """
     return alrequests.GET_soup(url)
 
-def joinstring(sibling):
+def joinstring(element):
     try:
-        return " ".join(sibling.stripped_strings)
+        return " ".join(element.stripped_strings)
     except:
-        return str(sibling)
+        return str(element)
 
 
 ##################################################
@@ -157,9 +157,14 @@ class Scraper():
                         self.stats[key] = [t.strip() for t in title.split("\n")]
                     else:
                         self.stats[key] = title
+                
             raise RuntimeError("Could not locate Information Header")
 
         def parse_information(information_header):
+            ## NOTE! MAL HTML is currently malformed and html.parser is not
+            ## closing the <br> tags, so we have to navigate past them manually
+            while information_header.name == "br":
+                information_header = information_header.next_element
             for sibling in information_header.next_siblings:
                 text = joinstring(sibling)
                 ## Done with Information section

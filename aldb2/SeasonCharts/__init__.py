@@ -227,7 +227,7 @@ class Show():
                 if self.medium == "TV" and other.medium != "TV":
                     self.medium = other.medium
                 ## Hentai takes precedence over all other mediums (to assist filtering)
-                if "hentai" in other.medium.lower():
+                if other.medium and "hentai" in other.medium.lower():
                     self.medium = other.medium
                 ## if continuing = True takes precedence
                 self.continuing = self.continuing or other.continuing
