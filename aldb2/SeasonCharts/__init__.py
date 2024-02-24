@@ -7,8 +7,6 @@ import json
 import re
 ## This Module
 from aldb2.WebModules import JST
-## Custom Module
-from alcustoms.methods import isiterable
 """
 Module for aggregating season charts from various sites
 

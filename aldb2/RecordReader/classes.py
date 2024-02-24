@@ -20,7 +20,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 Sheet Version History:
 
 NOTE: For early version (Version < 3) Workbooks (and their associated versions) had some degree of undocumented updating after their initial creation/use.
-NOTE: Changes to the formula of autocalculated columns are not recorded as it does not seem to be relevant at the moment
+NOTE: Changes to the formula used in autocalculated columns are not recorded as it does not seem to be relevant at the moment
 
 Version 0:
     - NOTE: This version recieved a minor formatting update after the fact
@@ -579,24 +579,24 @@ ShowSeriesID = int
 ShowIdentifier = typing.Union[ShowName,ShowOriginalID,ShowSeasonID,ShowSubseriesID,ShowSeriesID]
 
 ## EnhancedTable.todicts() keyfactory for converting Headers to attribute names
-keyfactory = lambda key: key.lower().replace(" ","")
+DEFAULTKEYFACTORY = lambda key: key.lower().replace(" ","")
 
-WBNAME = '''^(?:(?!~\$).)*?(?P<season>[a-zA-Z]+)\s*(?P<year>\d+)'''
+WBNAME = r'''^(?:(?!~\$).)*?(?P<season>[a-zA-Z]+)\s*(?P<year>\d+)'''
 WBNAMERE=re.compile(WBNAME)
 ## WBNAME[1:] -> Remove start-of-line marker
-FILENAMERE = re.compile(f"""^__Record\s+{WBNAME[1:]}\s*.xlsx?""",re.IGNORECASE)
+FILENAMERE = re.compile(fr"""^__Record\s+{WBNAME[1:]}\s*.xlsx?""",re.IGNORECASE)
 ## WEEKRE is currently used on tables (which cannot have spaces) but accepts spaces for use with Workbook names
-WEEKRE = re.compile("""^Week(?:\s|_)*(?P<number>\d+)\s*$""", re.IGNORECASE)
+WEEKRE = re.compile(r"""^Week(?:\s|_)*(?P<number>\d+)\s*$""", re.IGNORECASE)
 ## See WEEKRE note
-HYPERE = re.compile("""^Hype(?:\s|_)*Week(?:\s|_)*(?P<number>\d+)""", re.IGNORECASE)
+HYPERE = re.compile(r"""^Hype(?:\s|_)*Week(?:\s|_)*(?P<number>\d+)""", re.IGNORECASE)
 
-HYPEHISTRE = re.compile("""^Hype_Week(?P<number>\d+)_PreviousWeek\s*$""", re.IGNORECASE)
-ROUNDUPRE = re.compile("""^Week(?:\s|_)*(?P<number>\d+)Roundup\s*$""", re.IGNORECASE)
-ROUNDUPRENEWALRE = re.compile("""^Week(?:\s|_)*(?P<number>\d+)RenewalRoundup\s*$""", re.IGNORECASE)
-CUTRE = re.compile("""^Week(?:\s|_)*(?P<number>\d+)Cut(?P<type>Settings|Results)?\s*$""", re.IGNORECASE)
+HYPEHISTRE = re.compile(r"""^Hype_Week(?P<number>\d+)_PreviousWeek\s*$""", re.IGNORECASE)
+ROUNDUPRE = re.compile(r"""^Week(?:\s|_)*(?P<number>\d+)Roundup\s*$""", re.IGNORECASE)
+ROUNDUPRENEWALRE = re.compile(r"""^Week(?:\s|_)*(?P<number>\d+)RenewalRoundup\s*$""", re.IGNORECASE)
+CUTRE = re.compile(r"""^Week(?:\s|_)*(?P<number>\d+)Cut(?P<type>Settings|Results)?\s*$""", re.IGNORECASE)
 
-CHARTDATARE = re.compile("""^Chart\s*Data_(?P<type>WeeklyRanking|WeeklyOverallRanking)\s*$""", re.IGNORECASE)
-ANIMEAWARDS = re.compile("""^AnimeAwards\s*$""", re.IGNORECASE)
+CHARTDATARE = re.compile(r"""^Chart\s*Data_(?P<type>WeeklyRanking|WeeklyOverallRanking)\s*$""", re.IGNORECASE)
+ANIMEAWARDS = re.compile(r"""^AnimeAwards\s*$""", re.IGNORECASE)
 
 
 def listvalidfilenames(dire: str|pathlib.Path, recurse:bool=False)->typing.Generator[pathlib.Path,None, None]:
@@ -750,6 +750,9 @@ class SeasonRecord():
     def close(self):
         self.xlsx.close()
 
+    def save(self):
+        self.xlsx.save(self.file)
+
     def getlastweek(self)->"RankingSheet":
         weeks = [week for week in self.weeks.values() if week.shows]
         weeks.sort(key=lambda week: week.weeknumber, reverse=True)
@@ -869,6 +872,10 @@ class ShowStats():
         if shows:
             return shows[0]
         raise ValueError(f"Show '{show}' not found in ShowStats")
+    
+    def getshowsbyoriginalid(self, originalid: int)-> list["Show"]:
+        """ Returns a list of Show Objects for a show of the given originalid. """
+        return [show for show in self.shows.values() if show.originalid == originalid]
 
 class MasterShowStats(ShowStats):
     MASTERIDVALUE = "originalid"
@@ -887,7 +894,7 @@ class ExcelShowStats(ShowStats):
     def __init__(self, table: Tables.EnhancedTable, record: SeasonRecord, idvalue: str):
         self._table = table
         self.record = record
-        shows = table.todicts(keyfactory = keyfactory)
+        shows = table.todicts(keyfactory = DEFAULTKEYFACTORY)
         ## Remove headers
         headers = shows.pop(0)
         super().__init__(shows, idvalue= idvalue)
@@ -983,7 +990,7 @@ class HypeList():
     @property
     def rows(self):
         ## First index is keys()
-        return self.table.todicts(keyfactory = keyfactory)[1:]
+        return self.table.todicts(keyfactory = DEFAULTKEYFACTORY)[1:]
 
     @property
     def table(self)->Tables.EnhancedTable:
@@ -1069,7 +1076,7 @@ class HypeListv4(HypeList):
     @property
     def history(self):
         if self._historytable:
-            return self._historytable.todicts(keyfactory = keyfactory)[1:]
+            return self._historytable.todicts(keyfactory = DEFAULTKEYFACTORY)[1:]
         return []
 
     def rank(self, show: "Episode|ShowOriginalID|ShowName")-> int|None:
@@ -1093,7 +1100,7 @@ class RankingSheet():
     NEWRANKHEADER="newrank"
     EPISODEHEADER="episodes"
     HYPEOCCURENCEHEADER="hypelistoccurences"
-    WEEKRE=re.compile('''.*week\s*(?P<week>\d+)''',re.IGNORECASE)
+    WEEKRE=re.compile(r'''.*week\s*(?P<week>\d+)''',re.IGNORECASE)
     HYPELIST: typing.Type[HypeList] = HypeListV1
 
     @staticmethod
@@ -1118,7 +1125,7 @@ class RankingSheet():
 
         self.shows: EpisodeDict = dict()
         ## Index-0 of todicts is keys()
-        shows = self.table.todicts(keyfactory = keyfactory)[1:]
+        shows = self.table.todicts(keyfactory = DEFAULTKEYFACTORY)[1:]
         for show in shows:
             originalid = show.get("originalid",None)
             seasonid = show.get("seasonid",None)

@@ -25,6 +25,14 @@ def compilemaster(recurse):
 def compile_firstepisodes(directory, output, recurse):
     click.echo("Compile First Episodes...")
     master.compile_firstepisodes(directory, output, recurse)
+
+@cli.command()
+@click.option("--directory", "-d",  type=click.Path(exists=True), default = pathlib.Path.cwd())
+@click.option("--output", "-o", type=click.Path(), default = "master_lastepisodes.csv")
+@click.option("--recurse", "-r", is_flag=True,  default = False)
+def compile_lastepisodes(directory, output, recurse):
+    click.echo("Compile Last Episodes...")
+    master.compile_lastepisodes(directory, output, recurse)
     
     
 

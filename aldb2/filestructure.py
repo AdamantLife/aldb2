@@ -1,14 +1,7 @@
 ## Builtin
-import importlib
-import json
 import os,os.path
 import pathlib
-import shutil
-import traceback
-## Third Party
-import PIL.Image
-## Custom Module
-from alcustoms import tests
+
 
 #Program Data Directories
 DATAPATH=(pathlib.Path(os.path.expandvars('%PROGRAMDATA%'))/'AdamantMedia/AL Anime Database/').resolve()

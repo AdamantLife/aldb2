@@ -16,8 +16,6 @@ import warnings
 from aldb2.Anime import anime
 from aldb2.RecordReader import classes
 
-from alcustoms.methods import isiterable, testfileobj
-
 root = pathlib.Path.cwd().resolve()
 DEFAULTSTATFILE = (root / "master_stats.csv").resolve()
 DEFAULTEPISODEFILE = (root / "master_episodes.csv").resolve()
@@ -25,7 +23,9 @@ del root
 
 def load_masterstats(file):
     """ Loads a masterstats csv file """
-    file = testfileobj(file)
+    file = pathlib.Path(file).resolve()
+    if not file.exists() or not file.is_file():
+        raise FileNotFoundError(file)
     with open(file,'r', encoding = "utf-8") as f:
         reader = csv.DictReader(f)
         seasons = list(reader)
@@ -34,7 +34,7 @@ def load_masterstats(file):
 def save_masterstats(output,file):
     """ Saves a masterstats file with the given list of MasterStat objects """
     file = pathlib.Path(file).resolve()
-    if not isiterable(output) or not all(isinstance(obj,MasterStat) for obj in output):
+    if not all(isinstance(obj,MasterStat) for obj in output):
         raise ValueError("output must be a list of MasterStat objects")
     with open(file,'w', newline = "", encoding = "utf-8") as f:
         fieldnames = MasterStat(None,None).to_dict().keys()
@@ -73,7 +73,9 @@ class MasterStat(classes.Show):
 
 def load_masterepisodes(file):
     """ Loads a masterepisodes csv file """
-    file = testfileobj(file)
+    file = pathlib.Path(file).resolve()
+    if not file.exists() or not file.is_file():
+        raise FileNotFoundError(file)
     with open(file,'r', encoding = "utf-8") as f:
         reader = csv.DictReader(f)
         seasons = list(reader)
@@ -82,7 +84,7 @@ def load_masterepisodes(file):
 def save_masterepisodes(output,file):
     """ Saves a masterepisodes file with the given list of MasterEpisode objects """
     file = pathlib.Path(file).resolve()
-    if not isiterable(output) or not all(isinstance(obj,MasterEpisode) for obj in output):
+    if not all(isinstance(obj,MasterEpisode) for obj in output):
         raise ValueError("output must be a list of MasterStat objects")
     with open(file,'w', newline = "", encoding = "utf-8") as f:
         fieldnames = MasterEpisode(None,None,1.0,None,None,None,None).to_dict().keys()
@@ -133,9 +135,9 @@ def compile_directory(directory, statsfile = None, episodesfile = None, recurse 
         If not provided, they will be the module defaults (in the current work directory).
         If recurse is True, will search each subdirectory for SeasonRecords (default is False).
     """
-    directory = testfileobj(directory)
-    if not directory.is_dir():
-        raise ValueError("directory must a directory")
+    directory = pathlib.Path(directory).resolve()
+    if not directory.exists() or not directory.is_dir():
+        raise FileNotFoundError(directory)
     if statsfile is None:
         statsfile = DEFAULTSTATFILE
     if episodesfile is None:
@@ -196,6 +198,34 @@ def compile_firstepisodes(directory, output, recurse = False):
 
     with open(output, 'w', encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["SeasonIndex", "OriginalID", "Show", "Animation", "Art/Aesthetics", "Character/Story Investment", "Plot/World Building"], extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(results)
+    return
+
+def compile_lastepisodes(directory, output, recurse = False):
+    results = {}
+    for record in classes.SeasonRecord.load_directory(directory, recurse = recurse):
+        season = record.recordstats.animeseason.seasonindex
+        last_week = max(record.weeks.keys())
+        shows = len(record.weeks[last_week].shows)
+        while not shows and last_week > 0:
+            last_week -= 1
+            shows = len(record.weeks[last_week].shows)
+        if not shows:
+            print(f"Season {season} has no shows")
+            continue
+        last_week = record.weeks[last_week]
+        print(record.recordstats.animeseason.seasonindex, last_week.weeknumber, len(record.weeks), shows)
+        for show in last_week.shows.values():
+            if show.originalid:
+                if show.originalid not in results or results[show.originalid]["SeasonIndex"] < season:
+                    results[show.originalid] = show.to_dict()
+                    results[show.originalid]["SeasonIndex"] = season
+    results = list(results.values())
+    
+
+    with open(output, 'w', encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["SeasonIndex", "originalid", "name", "ranktotal"], extrasaction="ignore")
         writer.writeheader()
         writer.writerows(results)
     return
