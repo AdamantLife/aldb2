@@ -11,26 +11,6 @@
       "sql": "CREATE TABLE aliases (aliasid INTEGER PRIMARY KEY AUTOINCREMENT, node INT NOT NULL, tablename TEXT NOT NULL, alias TEXT NOT NULL,official BOOLEAN DEFAULT 0, language TEXT, UNIQUE(node,tablename,alias,language) ON CONFLICT IGNORE, UNIQUE(node,tablename,official,language))"
     },
     {
-      "name": "series",
-      "sql": "CREATE TABLE series(seriesid INTEGER PRIMARY KEY AUTOINCREMENT)"
-    },
-    {
-      "name": "users",
-      "sql": "CREATE TABLE \"users\" (userid INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, salt TEXT NOT NULL, hash TEXT NOT NULL)"
-    },
-    {
-      "name": "sessions",
-      "sql": "CREATE TABLE \"sessions\" (sessionid INTEGER PRIMARY KEY AUTOINCREMENT, userid INT REFERENCES \"users\"(userid) ON DELETE CASCADE, authtoken TEXT NOT NULL, authtime DATETIME NOT NULL)"
-    },
-    {
-      "name": "installed_apps",
-      "sql": "CREATE TABLE \"installed_apps\" (installid INTEGER PRIMARY KEY AUTOINCREMENT, module TEXT NOT NULL, version TEXT NOT NULL, UNIQUE(module))"
-    },
-    {
-      "name": "user_apps",
-      "sql": "CREATE TABLE \"user_apps\" (uappid INTEGER PRIMARY KEY AUTOINCREMENT,  userid INT NOT NULL REFERENCES \"users\"(userid), installid INT NOT NULL REFERENCES \"installed_apps\"(installid) ON DELETE CASCADE, UNIQUE(userid,installid) ON CONFLICT IGNORE)"
-    },
-    {
       "name": "genres",
       "sql": "CREATE TABLE genres (genreid INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,abbreviation TEXT UNIQUE,heavy BOOLEAN DEFAULT 0,spoiler BOOLEAN DEFAULT 0)"
     },

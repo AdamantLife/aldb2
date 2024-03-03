@@ -5,6 +5,7 @@ import datetime
 import itertools
 import json
 import re
+import typing
 ## This Module
 from aldb2.WebModules import JST
 """
@@ -33,6 +34,10 @@ Subclassing Show:
         save_as_csv
 """
 
+class TagSerialization(typing.TypedDict):
+    tag: str
+    spoiler: bool
+
 DTFORMAT = "%d/%m/%Y %H:%M:%S %z"
 
 SEASONALIASES = [0  , "0"   , "w"       , "wi"  , "win",
@@ -40,24 +45,25 @@ SEASONALIASES = [0  , "0"   , "w"       , "wi"  , "win",
                  2  , "2"   , "summer"  , "su"  , "sum",
                  3  , "3"   , "f"       , "fa"  , "fal"]
 
-SEASONRE = re.compile("""(?P<season>\w+)-(?P<year>\d{4})""")
+SEASONRE = re.compile(r"""(?P<season>\w+)-(?P<year>\d{4})""")
 SeasonError = AttributeError("Season must be a string formatted '{Season}-{4-digit Year}'")
 
-def matchseason(season):
+def matchseason(season: str)-> bool:
     """ Compares the season value to the standard Season Regex, returning True if it matches, else False """
     try:
         return bool(SEASONRE.match(season))
     except:
         return False
 
-def parseseason(season):
+def parseseason(season: str)-> typing.Tuple[str|typing.Literal[False], int|typing.Literal[False]]:
     """ Returns a tuple (season:str [capitalized], year:str) if the season matches the Season Regex, otherwise returns a tuple (False, False) """
     try:
         seasonresearch = SEASONRE.search(season)
+        if not seasonresearch: return False, False
         return seasonresearch.group("season").lower().capitalize(),int(seasonresearch.group("year"))
     except: return False, False
 
-def buildseason(season,year):
+def buildseason(season: str|int,year: str|int)-> str:
     """ Creates a correctly formatted season string.
    
     Accepts aliases for season (case-insensitive):
@@ -89,7 +95,9 @@ def buildseason(season,year):
 
 class Show():
     """ A generalized container for outputting standardized chart data """
-    def __init__(self, chartsource, season, japanese_title, romaji_title = "", english_title = "", additional_titles = None, medium = "TV", continuing = None, renewal = None, summary = "", tags = None, startdate = None, episodes = 0, runtime = 0, images = None, studios = None, links = None):
+    def __init__(self, chartsource: list|tuple, season:str, japanese_title: str, romaji_title:str = "", english_title:str = "", additional_titles: list[str]|None = None,
+                 medium: str = "TV", continuing:bool = False, renewal: bool = False, summary:str = "", tags: list[TagSerialization]|None = None,
+                 startdate: str|datetime.datetime|None = None, episodes: int = 0, runtime: int = 0, images: list[str]|None = None, studios: list[str]|None = None, links: list[typing.Tuple[str,str]]|None = None):
         """ Creates a new standardized Show Object.
 
         chartsource is a list of chart sources for this show. Each element should be a tuple (chart name, show's id for the chart).
@@ -117,7 +125,7 @@ class Show():
         if any(not isinstance(chart,(list,tuple)) for chart in chartsource)\
             or any(len(chart) != 2 for chart in chartsource):
             raise AttributeError("Each source for chartsource should be a length-2 tuple containing (chart name, show's id for the chart).")
-        self.chartsource = chartsource
+        self.chartsource = list(chartsource)
 
         aseason,ayear = parseseason(season)
         if not aseason:
@@ -137,7 +145,7 @@ class Show():
         if summary is None: summary = ""
         self.summary = summary
         if tags is None: tags =[]
-        self.tags = [Tag(tag) for tag in tags]
+        self.tags = [Tag(**tag) for tag in tags]
 
         if isinstance(startdate,str):
             try:
@@ -181,20 +189,21 @@ class Show():
         links = [(site.lower().title(),link) for site,link in links]
         self.links = sorted(set(links), key = lambda link: links.index(link))
 
-    def get_title(self):
+    def get_title(self)-> str:
         return self.romaji_title or self.english_title or self.japanese_title
 
-    def serialize(self):
+    def serialize(self)-> dict:
         """ Makes a json-valid serialization of the Show """
         runtime = self.runtime
         if isinstance(runtime, datetime.timedelta):
             runtime = runtime.total_seconds() / 60
-        return dict(chartsource=self.chartsource, season=self.season,
-                    japanese_title=self.japanese_title, romaji_title = self.romaji_title,
-                    english_title = self.english_title, additional_titles = self.additional_titles,
-                    medium = self.medium, continuing = self.continuing, renewal = self.renewal, summary = self.summary,
-                    tags = [tag.serialize() for tag in self.tags], startdate = self.startdate.strftime(DTFORMAT) if self.startdate else None,
-                    episodes = self.episodes, runtime = runtime, images = self.images, studios = self.studios, links = self.links)
+        tags = [tag.serialize() for tag in self.tags]
+        return {"chartsource" :self.chartsource, "season" :self.season,
+                    "japanese_title" :self.japanese_title, "romaji_title" : self.romaji_title,
+                    "english_title" : self.english_title, "additional_titles" : self.additional_titles,
+                    "medium" : self.medium, "continuing" : self.continuing, "renewal" : self.renewal, "summary" : self.summary,
+                    "tags" : tags, "startdate" : self.startdate.strftime(DTFORMAT) if self.startdate else None,
+                    "episodes" : self.episodes, "runtime" : runtime, "images" : self.images, "studios" : self.studios, "links" : self.links}
 
     def __eq__(self,other):
         if isinstance(other,Show):
@@ -277,36 +286,18 @@ class Show():
 
 class Tag():
     """ A Descriptive term for the content and themes of a Show """
-    def __init__(self, tag, spoiler = False):
+    def __init__(self, tag: str, spoiler: bool = False):
         """ Creates a new Tag Object.
 
         tag is a string which describes a theme or genre represented in or by the Show.
         spoiler is a boolean which indicates whether the tag spoils a plot point that is initially obfuscated
         """
-        if isinstance(tag,(list,tuple)):
-            if len(tag) == 1:
-                tag = tag[0]
-            elif len(tag) == 2:
-                tag,spoiler = tag
-            else:
-                raise TypeError(f"__init__() takes from 2 to 3 positional arguments but {len(tag)} were given")
-        elif isinstance(tag,dict):
-            kwargs = tag
-            try:
-                tag = kwargs.pop("tag")
-            except KeyError:
-                raise TypeError("__init__() missing 1 required positional argument: 'tag'")
-            spoiler = kwargs.pop("spoiler",spoiler)
-            if kwargs:
-                raise TypeError("__init__() got an unexpected keyword argument '{list(kwargs)[0]}'")
-
-        if not isinstance(tag,str):
-            raise TypeError("tag argument must be a string")
-        self.tag = tag
+        self.tag = str(tag)
         self.spoiler = bool(spoiler)
 
-    def serialize(self):
-        return dict(tag = self.tag, spoiler = self.spoiler)
+    def serialize(self)-> TagSerialization:
+        return {"tag": self.tag, "spoiler": self.spoiler}
+    
     def __eq__(self,other):
         if isinstance(other,Tag):
             return self.tag == other.tag
@@ -321,23 +312,23 @@ class Tag():
         return f"<{self.__class__.__name__} object: {self.tag}{'*spoiler*' if self.spoiler else ''}>"
 
 
-def serialize_shows(shows,filename):
+def serialize_shows(shows: list[Show], filename: str):
     """ Exports the shows as a json """
     if any(not isinstance(show,Show) for show in shows):
         raise TypeError("shows should be a list of Show objects")
 
-    shows = [show.serialize() for show in shows]
+    out = [show.serialize() for show in shows]
     with open(filename,'w',encoding = 'utf-8') as f:
-        json.dump(shows,f)
+        json.dump(out,f)
 
-def load_serialized(filename):
+def load_serialized(filename:str)-> list[Show]:
     """ Loads shows saved as json """
     with open(filename,'r',encoding = 'utf-8') as f:
         data = json.load(f)
     shows = [Show(**show) for show in data]
     return shows
 
-def save_as_csv(shows, filename, include_spoilers = False):
+def save_as_csv(shows: list[Show], filename: str, include_spoilers: bool = False):
     """ Converts serialized data to csv-compliant format via json_to_csvdict and then writes it to file
     
     Most multi-value fields are combined (i.e. - chartsource, tags), but Links are separated into their own columns.

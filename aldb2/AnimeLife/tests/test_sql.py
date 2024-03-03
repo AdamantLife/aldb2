@@ -59,7 +59,7 @@ def populate_animeseasons(testcase):
 def populate_al_weeklyranking(testcase):
     """ Adds test values to the al_weeklyranking table """
     testdata = gettestdata()
-    testcase.connection.executemany("""INSERT INTO al_weeklyranking (animeweekid,week,animeseason,episodenumber,rank,hyplistrank,bookmarked) VALUES (?,?,?,?,?,?,?);""",testdata['setup']['weeklyranking'])
+    testcase.connection.executemany("""INSERT INTO al_weeklyranking (animeweekid,week,animeseason,episodenumber,rank,hypelistrank,bookmarked) VALUES (?,?,?,?,?,?,?);""",testdata['setup']['weeklyranking'])
     
 class Case(unittest.TestCase):
     def setUp(self):

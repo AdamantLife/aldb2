@@ -186,49 +186,49 @@ def outputstats(filelocation,shows,stats):
     with open(filelocation,'w') as f:
         json.dump(out,f)
 
-def sortstatsbyseason(db,queryseasons,statfile,outdirectory,overwrite=True):
-    conn=sql.setupconnection(db)
-    noerrorflag=True
-    try:
-        if not os.path.exists(outdirectory):
-            os.mkdir(outdirectory)
-        with open(statfile,'r') as f:
-            stats=json.load(f)
-        shows=[]
-        for rowid,seriesstats in stats.items():
-            anime=sql.getanimebyrowid(conn,rowid)
-            if not anime: raise ValueError("No Anime with Rowid %s" % rowid)
-            seriesstats['show']=anime
-            seriesstats['episodes']=[CREpisode(**episode) for episode in seriesstats['episodes']]
-            shows.append(seriesstats)
-        seasons=dict()
-        for season in queryseasons:
-            seashows=sorted([show for show in shows if season in show['show'].animeseason],key=lambda show: show['show'].series)
-            episodes=[
-                [show['show'].title,episode['number'],episode['rating']] for show in seashows
-                 for episode in show['episodes']
-                 ]
-            series=[[show['show'].title,rating,show['ratings'][rating]] for show in seashows for rating in sorted(show['ratings'])]
-            seasons[coremodules.seasonstring(season)]={'series':series,'episodes':episodes}
-        for season,stats in seasons.items():
-            seriesfilepath="{}/CR_{} Series Stats.csv".format(outdirectory,season)
-            episodefilepath="{}/CR_{} Episode Stats.csv".format(outdirectory,season)
-            if not overwrite and os.path.exists(seriesfilepath):
-                raise IOError("%s already exists!" % filepath)
-            if not overwrite and os.path.exists(episodefilepath):
-                raise IOError("%s already exists!" % filepath)
-            with open(seriesfilepath,'w',newline="") as f: ## csv.writer already inserts /n... Not sure why???
-                writer=csv.writer(f)
-                writer.writerows(stats['series'])
-            with open(episodefilepath,'w',newline="") as f: ## csv.writer already inserts /n... Not sure why???
-                writer=csv.writer(f)
-                writer.writerows(stats['episodes'])
-    except:
-        traceback.print_exc()
-        noerrorflag=False
-    finally:
-        conn.close()
-    return noerrorflag
+# def sortstatsbyseason(db,queryseasons,statfile,outdirectory,overwrite=True):
+#     conn=sql.setupconnection(db)
+#     noerrorflag=True
+#     try:
+#         if not os.path.exists(outdirectory):
+#             os.mkdir(outdirectory)
+#         with open(statfile,'r') as f:
+#             stats=json.load(f)
+#         shows=[]
+#         for rowid,seriesstats in stats.items():
+#             anime=sql.getanimebyrowid(conn,rowid)
+#             if not anime: raise ValueError("No Anime with Rowid %s" % rowid)
+#             seriesstats['show']=anime
+#             seriesstats['episodes']=[CREpisode(**episode) for episode in seriesstats['episodes']]
+#             shows.append(seriesstats)
+#         seasons=dict()
+#         for season in queryseasons:
+#             seashows=sorted([show for show in shows if season in show['show'].animeseason],key=lambda show: show['show'].series)
+#             episodes=[
+#                 [show['show'].title,episode['number'],episode['rating']] for show in seashows
+#                  for episode in show['episodes']
+#                  ]
+#             series=[[show['show'].title,rating,show['ratings'][rating]] for show in seashows for rating in sorted(show['ratings'])]
+#             seasons[coremodules.seasonstring(season)]={'series':series,'episodes':episodes}
+#         for season,stats in seasons.items():
+#             seriesfilepath="{}/CR_{} Series Stats.csv".format(outdirectory,season)
+#             episodefilepath="{}/CR_{} Episode Stats.csv".format(outdirectory,season)
+#             if not overwrite and os.path.exists(seriesfilepath):
+#                 raise IOError("%s already exists!" % filepath)
+#             if not overwrite and os.path.exists(episodefilepath):
+#                 raise IOError("%s already exists!" % filepath)
+#             with open(seriesfilepath,'w',newline="") as f: ## csv.writer already inserts /n... Not sure why???
+#                 writer=csv.writer(f)
+#                 writer.writerows(stats['series'])
+#             with open(episodefilepath,'w',newline="") as f: ## csv.writer already inserts /n... Not sure why???
+#                 writer=csv.writer(f)
+#                 writer.writerows(stats['episodes'])
+#     except:
+#         traceback.print_exc()
+#         noerrorflag=False
+#     finally:
+#         conn.close()
+#     return noerrorflag
 
 def GatherLoop(conn,queryseasons,outfile):
     stats=getstats(conn,animeseasons=queryseasons)

@@ -1,26 +1,21 @@
 ## Builtin
 import datetime
-import os
-import time
-import zipfile
-## Third Party
-import PIL.Image, PIL.ImageTk
+import typing
 ## This Module
 import aldb2.constants as constants
-import aldb2.filestructure as filestructure
 import aldb2.Core.core as core
 
 def _raise_differenceerror(object):
     return 'Anime can only get difference from Animes and Dicts: received {objtype}'.format(objtype=type(object))
 
-def getcurrentseason():
+def getcurrentseason()-> constants.AnimeSeasonDict:
     """ Returns the current season """
     today = datetime.date.today()
     season= constants.SEASONS[today.month//4]
     year = today.year
-    return dict(season = season, year = year)
+    return {"season" : season, "year" : year}
 
-def sortseasondicts(animeseasons): ## Tested: AnimeSeasonDictCase.test_sortseasons
+def sortseasondicts(animeseasons: list[constants.AnimeSeasonDict])->list[constants.AnimeSeasonDict]: ## Tested: AnimeSeasonDictCase.test_sortseasons
     """ Chronologically sorts season dicts using getseasonhash
     
     (Note, it is normallly preferable to simply convert season dicts
@@ -28,21 +23,21 @@ def sortseasondicts(animeseasons): ## Tested: AnimeSeasonDictCase.test_sortseaso
     """
     return sorted(animeseasons, key = getseasonindex)
 
-def getseasonindex(animeseason):
+def getseasonindex(animeseason: constants.AnimeSeasonDict)-> float:
     """ Returns the standard SeasonIndex float value of the AnimeSeason (Year.seasonindex) """
     return float(f"{animeseason['year']}.{constants.SEASONS.index(animeseason['season'])}")
 
-def getseasonhash(animeseason): ## Tested: AnimeSeasonDictCase.test_getseasonhash
+def getseasonhash(animeseason: constants.AnimeSeasonDict)->int: ## Tested: AnimeSeasonDictCase.test_getseasonhash
     """ Returns a hashable identifier for an animeseason dict """
     return hash(getseasonindex(animeseason))
 
-def sumseasons(animeseasons): ## Tested: AnimeSeasonCase.test_sumseasons
+def sumseasons(animeseasons: "list[list[AnimeSeason]]"): ## Tested: AnimeSeasonCase.test_sumseasons
     """ Combines lists of animeseasons into a list of unique seasons """
     seasons=sum(animeseasons,[])
-    return sorted(set(seasons))
+    return sorted(set(seasons)) #type: ignore ## TODO: Fix this type ignore, is tested so should be valid and may be the type checker
 
-def sumseasondicts(animeseasons): ## Tested: AnimeSeasonDictCase.test_sumseasondicts
-    """ Combines lists of animeseason dicts into a list of unique seasons """
+def sumseasondicts(animeseasons: list[list[constants.AnimeSeasonDict]])-> list[constants.AnimeSeasonDict]: ## Tested: AnimeSeasonDictCase.test_sumseasondicts
+    """ Combines multiple lists of animeseason dicts into a consolidated list of unique seasons """
     seasons=sum(animeseasons,[])
     out = dict()
     for season in seasons:
@@ -51,23 +46,34 @@ def sumseasondicts(animeseasons): ## Tested: AnimeSeasonDictCase.test_sumseasond
             out[shash] = season
     return [season for shash, season in sorted(out.items(), key = lambda season: season[0])]
 
-def parseanimeseason(astring): ## Tested: AnimeSeasonDictCase.test_parseanimeseason_[good/bad]
+ParseableSeason = typing.Union[str, float, tuple, constants.AnimeSeasonDict, "AnimeSeason", constants.ANIMESEASONDESCRIPTOR]
+
+def parseanimeseason(astring: ParseableSeason)->"AnimeSeason": ## Tested: AnimeSeasonDictCase.test_parseanimeseason_[good/bad]
     """ Parses and Validates a Season String and returns a Season Dict """
     
     if isinstance(astring,AnimeSeason):
         ## AnimeSeason Objects are already validated
         return astring
+    
+    if isinstance(astring,float):
+        ## SeasonIndex representation (aka- AnimeSeason.__hash__ format)
+        season = (astring - int(astring))
+        year = int(astring - season)
+        season = round(season*10,0)
+        astring = buildseasondict(season = int(season), year = year)
 
     if isinstance(astring,str):
-        try: astring = float(astring)
-        except: pass
-        else: return parseanimeseason(astring)
-        if len(astring.split())>1: return parseanimeseason(astring.split())         ## Convert whitespace-separated to list
-        if len(astring.split("_"))>1: return parseanimeseason(astring.split("_"))   ## Convert underscore-separated to list
-        if len(astring.split("-"))>1: return parseanimeseason(astring.split("-"))   ## Convert hyphen-separated to list
-        raise ValueError("Not an AnimeSeason")                                      ## No handling for other format strings
 
-    if isinstance(astring,list):
+        try: fstring = float(astring)
+        except: pass
+        else: return parseanimeseason(fstring)
+        astring = tuple(astring.split())
+        if len(astring) == 1:
+            astring = tuple(astring[0].split("_"))
+        if len(astring) == 1:
+            astring = tuple(astring[0].split("-"))
+
+    if isinstance(astring,tuple):
         if len(astring)>2: raise ValueError("Not an AnimeSeason")                   ## There should only be valid items for seasons
         a,b=astring
         try: int(a)                                                                 ## Check if first item is Year
@@ -76,35 +82,28 @@ def parseanimeseason(astring): ## Tested: AnimeSeasonDictCase.test_parseanimesea
             except ValueError: raise ValueError("Not an AnimeSeason")               ## Improper format if neither is Year
             else: year,season=b,a                                                   ## Assign roles
         else: year,season=a,b                                                       ## Assign roles
-        return buildseasondict(year=year,season=season)
+        astring = buildseasondict(year=int(year),season=season)
 
     if isinstance(astring,dict):
         try:
-            return buildseasondict(**dict(season = astring['season'], year = astring['year']))
+            return AnimeSeason(**buildseasondict(**{"season" : astring['season'], "year" : int(astring['year'])}))
         except (TypeError, KeyError):
             raise ValueError("Not an AnimeSeason")
-
-    if isinstance(astring,float):
-        ## SeasonIndex representation (aka- AnimeSeason.__hash__ format)
-        season = (astring - int(astring))
-        year = int(astring - season)
-        season = round(season*10,0)
-        return parseanimeseason(dict(season = season, year = year))
     raise ValueError("Not an AnimeSeason")
 
-def parseanimeseason_toobject(astring):
+def parseanimeseason_toobject(astring: ParseableSeason)-> "AnimeSeason":
     """ Converts an Anime Season string into an AnimeSeason Object via parseanimestring """
     seasondict = parseanimeseason(astring)
     if isinstance(seasondict,AnimeSeason): return seasondict
     return AnimeSeason(**seasondict)
 
-def stepanimeseasondict(animeseasondict,increment=1):
+def stepanimeseason_todict(animeseasondict: ParseableSeason,increment: int=1)-> constants.AnimeSeasonDict:
     """ Chronologically navigates a number of seasons (defualt 1) from the given season and returns the result"""
     animeseason = parseanimeseason_toobject(animeseasondict)
     new = stepanimeseason(animeseason, increment = increment)
     return new.as_dict()
 
-def stepanimeseason(animeseason,increment = 1):
+def stepanimeseason(animeseason: "AnimeSeason",increment: int = 1)-> "AnimeSeason":
     """ Chronologically navigates a number of seasons (defualt 1) from the given season and returns the result"""
     newseason=animeseason.seasonnumber+increment
     year=animeseason.year
@@ -115,14 +114,14 @@ def stepanimeseason(animeseason,increment = 1):
     #elif newseason<0:
     #    year-= // seasonlen
     #    newseason %= seasonlen
-    return AnimeSeason(season=newseason,year=year)
+    return AnimeSeason(season=constants.SEASONS[newseason],year=year)
 
-def sortbyanimeseason(animelist,reverse=False):
+def sortbyanimeseason(animelist,reverse: bool=False): ## TODO: Figure out what anime list this is (Season does not have an AnimeSason attribute)
     """ Sorts a list of animes by their first animeseason """
-    animelist.sort(key = lambda anime: min(anime.animeseasons), reversed = reverse)
+    animelist.sort(key = lambda anime: min(anime.animeseasons), reverse = reverse)
     return animelist
 
-def buildseasondict(season,year):
+def buildseasondict(season: str|int|constants.SEASONALIASESTYPE, year: int)->constants.AnimeSeasonDict:
     """ Creates a correctly formatted season dict.
    
     Accepts aliases for season (case-insensitive):
@@ -144,43 +143,43 @@ def buildseasondict(season,year):
     if season in constants.SEASONALIASES:
         index = constants.SEASONALIASES.index(season)
         season = constants.SEASONALIASES[index // 6 * 6]
-    season = season.capitalize()
-    if season not in ("Winter","Spring","Summer","Fall"):
-        print(season)
+    season = season.capitalize() # type: ignore ## season from the previous line is always a value from SEASONS.lower() but the type checker doesn't know that
+    if season not in constants.SEASONS:
         raise AttributeError("Season must be 'Winter','Spring','Summer', or 'Fall', or an accepted alias")
     try:
         year = int(year)
     except:
         raise TypeError("Year must be an integer")
-    return dict(season = season, year = int(year))
+    return {"season" : season, "year" : int(year)} # type: ignore ## TODO: Pretty sure this wil be fixed by adding Capitalized Season name
+                                                    ## to SEASONS and changing the above index //6 * 6 to index 7
 
 class AnimeSeason():
     """ The representation of a single cour during a specific year: e.g- Fall 2017 """
-    def __init__(self,season,year):
+    def __init__(self,season: constants.SEASONSTYPE, year: int):
         """ Creates a new Season.
         
         season can be the season name (case insensitive), it's index, or an accepted abbreviation.
         year should be an integer.
         """
-        seasondict = buildseasondict(season,year)
-        self.season: str = seasondict["season"]
+        seasondict: constants.AnimeSeasonDict = buildseasondict(season,year)
+        self.season: constants.SEASONSTYPE = seasondict["season"]
         self.year:int = int(seasondict["year"])
 
     @property
-    def seasonnumber(self):
+    def seasonnumber(self)-> int:
         """ Returns the index of the AnimeSeasons's season """
         return constants.SEASONS.index(self.season)
 
-    def as_dict(self):
-        return dict(season = self.season, year = self.year)
+    def as_dict(self)-> constants.AnimeSeasonDict:
+        return {"season" : self.season, "year" : self.year}
 
-    def previous(self):
+    def previous(self)-> "AnimeSeason":
         return stepanimeseason(self,-1)
-    def next(self):
+    def next(self) -> "AnimeSeason":
         return stepanimeseason(self,+1)
 
     @property
-    def seasonindex(self):
+    def seasonindex(self)-> float:
         return getseasonindex(self.as_dict())
 
     def __hash__(self):
@@ -208,44 +207,49 @@ class AnimeSeason():
         return f"{self.__class__.__name__}: {self}"
 
 class Season():
-    def __init__(self, seasonid, season, seriesid = None, series = None, subseriesid = None, subseries = None,
-                 mediumid = None, medium = None, episodes = 0):
-        self.subseries = core.Subseries(subseriesid = subseriesid, subseries = subseries, seriesid = seriesid, series = series)
-        self.seasonid = seasonid
-        self.season = season
-        self.medium = Medium(mediumid = mediumid, medium = medium)
-        self.episodes = episodes
+    def __init__(self, seasonid: int, subseriesid: int, seriesid: int,
+                 season: str, subseries: str, series: str,
+                 mediumid: int, medium: str, episodes: int = 0):
+        self.subseries: core.Subseries = core.Subseries(subseriesid = subseriesid, subseries = subseries, seriesid = seriesid, series = series)
+        self.seasonid: int = seasonid
+        self.season: str = season
+        self.medium: Medium = Medium(mediumid = mediumid, medium = medium)
+        self.episodes: int = episodes
 
 class Medium():
-    def __init__(self, mediumid, medium):
-        self.mediumid = mediumid
-        self.medium = medium
+    def __init__(self, mediumid: int, medium: str):
+        self.mediumid: int = mediumid
+        self.medium: str = medium
 
     def __str__(self):
         return self.medium
 
 class SeasonGenres():
     def __init__(self, genrelistid, genreid, seasonid):
-        self.genrelistid = genrelistid
-        self.genreid = genreid
-        self.seasonid = seasonid
+        self.genrelistid: int = genrelistid
+        self.genreid: int = genreid
+        self.seasonid: int = seasonid
 
 class SubseriesGenres():
-    def __init__(self, genrelistid, genreid, subseriesid):
-        self.genrelistid = genrelistid
-        self.genreid = genreid
-        self.subseriesid = subseriesid
+    def __init__(self, genrelistid: int, genreid: int, subseriesid: int):
+        self.genrelistid: int = genrelistid
+        self.genreid: int = genreid
+        self.subseriesid: int = subseriesid
 
 class LibraryEntry():
-    def __init__(self, libraryid, userid, seasonid, season = None, catrank = 2, rank = 250, locked = False, episodeswatched = 0, lastwatched = 0, bookmarked = False,
-                 seriesid = None, series = None, subseriesid = None, subseries = None, medium = "TV", episodes = 0):
-        self.libraryid = libraryid
-        self.userid = userid
-        self.seasonid = seasonid
-        self.season = Season(seasonid, season,seriesid = seriesid, series = series, subseriesid=subseriesid,subseries=subseries, medium = medium, episodes = episodes)
-        self.catrank = catrank
-        self.rank = rank
-        self.locked = locked
-        self.episodeswatched = episodeswatched
-        self.lastwatched = lastwatched
-        self.bookmarked = bookmarked
+    def __init__(self, libraryid: int, seasonid: int, subseriesid:int, seriesid: int,
+                 season: str, subseries:str, series: str,
+                 mediumid: int, medium: str, episodes: int = 0,
+                 catrank: int = 2, rank: int = 250, locked: bool = False, episodeswatched: int = 0,
+                 lastwatched: int = 0, bookmarked: bool = False):
+        self.libraryid: int = libraryid
+        self.seasonid: int = seasonid
+        self.season: Season = Season(seasonid=seasonid, subseriesid=subseriesid, seriesid = seriesid,
+                                     season = season, subseries=subseries, series = series,
+                                     mediumid=mediumid, medium = medium, episodes = episodes)
+        self.catrank: int  = catrank
+        self.rank: int = rank
+        self.locked: bool = locked
+        self.episodeswatched: int = episodeswatched
+        self.lastwatched: int = lastwatched
+        self.bookmarked: bool = bookmarked

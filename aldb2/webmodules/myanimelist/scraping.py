@@ -63,7 +63,7 @@ malid_deco = decorators.signature_decorator_factory(_checkmalidurl)
 
 @alrequests.sessiondecorator
 @malid_deco
-def getanimepage(url, session = None):
+def getanimepage(url, session: alrequests.requests.Session):
     """ Returns the requests.response object for the webpage for the given MAL Anime ID. """
     if not myanimelist.is_siteurl(url):
         raise ValueError("Invalid site url")
@@ -71,9 +71,9 @@ def getanimepage(url, session = None):
 
 @alrequests.sessiondecorator
 @malid_deco
-def getanimesoup(url,session = None):
+def getanimesoup(url: str,session: alrequests.requests.Session):
     """ Returns the BSoup for the MAL anime page with the given MAL Anime ID or url. """
-    return alrequests.GET_soup(url)
+    return alrequests.GET_soup(url=url, session=session)
 
 def joinstring(element):
     try:
@@ -92,25 +92,25 @@ MAL_LOCK = web.RequestLock(timeout = 2)
 class Scraper():
     @alrequests.sessiondecorator
     @malid_deco
-    def __init__(self, url, session = None):
+    def __init__(self, url, session: alrequests.requests.Session):
         ##self.resp = alrequests.GET(url)
         ##self.soup = alrequests.response_to_soup(self.resp)
         with MAL_LOCK:
-            self.soup = getanimesoup(url,session)
+            self.soup = getanimesoup(url=url,session=session)
         self.stats = {"genres" : []}
 
     @property
     def alt_titles_re(self):
-        return re.compile("\s*alternative\s*titles\s*", re.IGNORECASE)
+        return re.compile(r"\s*alternative\s*titles\s*", re.IGNORECASE)
     @property
     def information_re(self):
-        return re.compile("\s*information\s*",re.IGNORECASE)
+        return re.compile(r"\s*information\s*",re.IGNORECASE)
     @property
     def title_re(self):
-        return re.compile("\s*(?P<type>(?:English|Synonyms|Japanese)):\s*(?P<title>.*?)\s*$")
+        return re.compile(r"\s*(?P<type>(?:English|Synonyms|Japanese)):\s*(?P<title>.*?)\s*$")
     @property
     def statistics_re(self):
-        return re.compile("\s*statistics\s*",re.IGNORECASE)
+        return re.compile(r"\s*statistics\s*",re.IGNORECASE)
     @property
     def informationvalues_re(self):
         return re.compile("(?P<category>type|episodes|status|aired|airing|premiered|broadcast|producers|licensors|studios|source|genres|genre|duration|rating)\s*:\s*(?P<value>.+)", re.IGNORECASE)

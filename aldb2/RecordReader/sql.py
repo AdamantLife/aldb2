@@ -1,13 +1,17 @@
 ## This Module
 from aldb2.RecordReader import *
 ## Backend
-from alcustoms import sql
+import sqlite3
 
 ## Builtin
 import collections
 import datetime
+import itertools
 import pathlib
-## Sister Module
+import typing
+## This Submodule
+from aldb2.RecordReader import master
+## Sister Submodule
 from aldb2.Anime import anime
 from aldb2.Anime import sql as animesql
 from aldb2.webmodules import sql as websql
@@ -29,7 +33,7 @@ cjk_ranges = [
   {"from": ord(u"\U0002b740"), "to": ord(u"\U0002b81f")},
   {"from": ord(u"\U0002b820"), "to": ord(u"\U0002ceaf")}  # included as of Unicode 8.0
 ]
-def is_cjk(instring):
+def is_cjk(instring: str)-> bool:
     def check(c):
         return any([range["from"] <= ord(c) <= range["to"] for range in cjk_ranges])
     return any(check(c) for c in instring)
@@ -80,7 +84,7 @@ def import_master(db, masterstats = None, masterepisodes = None, overwrite = Fal
 
         stats = []
         if masterstats:
-            stats = master.load_masterstats(masterstats)
+            stats = master.MasterShowStats.load_masterstats(masterstats)
         episodes = []
         if masterepisodes:
             episodes = master.load_masterepisodes(masterepisodes)
@@ -380,7 +384,7 @@ def compile_masterstats(db, animeseasonid):
             #print(f"{season.pk}\t{sitename}\t{sid}")
             output[heading] = sid.siteid
 
-    return master.MasterStat(**output)
+    return master.MasterShow(**output)
 
 def compile_masterepisodes(db, animeseasonid):
     """ Compiles a list of MasterEpisode objects from the database for the given animeseasonid """
@@ -412,7 +416,7 @@ def compile_masterepisodes(db, animeseasonid):
 
     return [convert(episode) for episode in episodes]
 
-def export_master(db, seasons = None, masterstats = None, masterepisodes = None):
+def export_master(db, seasons: list[anime.AnimeSeason]|tuple[anime.AnimeSeason]|None = None, masterstats:str|pathlib.Path|None|typing.Literal[False] = None, masterepisodes:str|pathlib.Path|None|typing.Literal[False] = None)->None:
     """ Exports database into masterstats and masterepisodes files.
 
         This function uses RecordReader.master's save_masterstats and save_masterepisodes to export masterstats and masterepisodes (respectively).
@@ -427,13 +431,17 @@ def export_master(db, seasons = None, masterstats = None, masterepisodes = None)
     if masterepisodes is None:
         masterepisodes = master.DEFAULTEPISODEFILE
 
-    if masterstats and masterstats.exists():
-        raise FileExistsError("masterstats file already exists")
-    if masterepisodes and masterepisodes.exists():
-        raise FileExistsError("masterepisodes file already exists")
+    
 
-    rankingtable = db.getadvancedtable("al_weeklyranking")
-    trf = sql.Utilities.temp_row_factory
+    if masterstats:
+        masterstats = pathlib.Path(masterstats).resolve()
+        if masterstats.exists():
+            raise FileExistsError("masterstats file already exists")
+    if masterepisodes:
+        masterepisodes = pathlib.Path(masterepisodes).resolve()
+        if masterepisodes.exists():
+            raise FileExistsError("masterepisodes file already exists")
+
     if seasons:
         if not isinstance(seasons,(list,tuple)):
             raise TypeError("Invalid seasons argument: should be a list or None")
@@ -476,7 +484,7 @@ WITH
     if masterstats:
         seasons = [compile_masterstats(db,**season.row)
                    for season in series]
-        master.save_masterstats(seasons,masterstats)
+        master.save_mastershows(seasons,masterstats)
 
     if masterepisodes:
         episodes = [compile_masterepisodes(db,**season.row) for season in series]

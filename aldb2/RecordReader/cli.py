@@ -14,7 +14,7 @@ def cli():
 def compilemaster(recurse):
     dire = pathlib.Path.cwd()
     click.echo("Compile Master Stats and Episodes...")
-    master.compile_directory(dire, recurse= recurse)
+    master.compile_excel_directory(dire, recurse= recurse)
     click.echo("Done")
 
 
@@ -24,7 +24,7 @@ def compilemaster(recurse):
 @click.option("--recurse", "-r", is_flag=True,  default = False)
 def compile_firstepisodes(directory, output, recurse):
     click.echo("Compile First Episodes...")
-    master.compile_firstepisodes(directory, output, recurse)
+    master.compile_excel_firstepisodes(directory, output, recurse)
 
 @cli.command()
 @click.option("--directory", "-d",  type=click.Path(exists=True), default = pathlib.Path.cwd())
@@ -32,7 +32,7 @@ def compile_firstepisodes(directory, output, recurse):
 @click.option("--recurse", "-r", is_flag=True,  default = False)
 def compile_lastepisodes(directory, output, recurse):
     click.echo("Compile Last Episodes...")
-    master.compile_lastepisodes(directory, output, recurse)
+    master.compile_excel_lastepisodes(directory, output, recurse)
     
     
 

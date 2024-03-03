@@ -6,7 +6,7 @@ import re
                      webmodules Requirements
                                                               """
 #################################################################
-SITENAME = "crunchyroll"
+SITENAME: str = "crunchyroll"
 
 HOMEPAGE = "https://www.crunchyroll.com/"
 LOGINURL = "https://www.crunchyroll.com/login"

@@ -6,19 +6,20 @@
 
 ## Builtin
 import re
+import typing
 
 #################################################################
 """
                      webmodules Requirements
                                                               """
 #################################################################
-SITENAME = "MyAnimeList"
+SITENAME: str = "MyAnimeList"
 
-def match_url(url):
-    return bool(re.search("""myanimelist\.net""",url))
+def match_url(url: str) -> bool:
+    return bool(re.search(r"""myanimelist\.net""",url))
 
-def parse_siteid(url):
-    result = re.search("""(https?://)?myanimelist\.net/anime/(?P<siteid>\d+)""",url)
+def parse_siteid(url: str)-> str|typing.Literal[False]:
+    result = re.search(r"""(https?://)?myanimelist\.net/anime/(?P<siteid>\d+)""",url)
     if result:
         return result.group("siteid")
     return False

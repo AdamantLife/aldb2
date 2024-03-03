@@ -2,13 +2,11 @@
 from aldb2 import Calendar
 from aldb2.RecordReader import classes
 ## Builtin
-import csv
 import datetime
-import itertools
 import re
+import pprint
 from xml.etree import ElementTree as ET
 ## Custom Module
-from alcustoms.methods import isiterable
 import AL_Web as web
 from AL_Web import requests as alrequests
 
@@ -17,13 +15,13 @@ from AL_Web import requests as alrequests
                      webmodules Requirements
                                                               """
 #################################################################
-SITENAME = "syoboi"
+SITENAME: str = "syoboi"
 
 def match_url(url):
-    return bool(re.search("""syoboi\.jp""",url))
+    return bool(re.search(r"""syoboi\.jp""",url))
 
 def parse_siteid(url):
-    result = re.search("""(https?://)?cal\.syoboi\.jp/tid/(?P<siteid>\d+)""",url)
+    result = re.search(r"""(https?://)?cal\.syoboi\.jp/tid/(?P<siteid>\d+)""",url)
     if result:
         return result.group("siteid")
     return False
@@ -170,26 +168,9 @@ def getepisodes_soup(shows,session = None):
         episodes.append(airings)
     return episodes
 
-
-if __name__=="__main__":
-    FILE = r"C:\Users\Reid\Dropbox\][Video Editing\AnimeLife\__Record W2018.xlsx"
+def main(FILE: str, SHOWS: list[str]):
     RECORD = classes.SeasonRecord(FILE)
-
-    SHOWS = """
-    A Place Further Than the Universe
-citrus
-DARLING in the FRANXX
-IDOLiSH 7
-Junji Ito Collection
-Kokkoku
-March Comes in Like a Lion 2nd Season
-Overlord II
-Record of Grancrest War
-The Ancient Magus' Bride
-"""
-    from alcustoms.methods import linestolist
-    import pprint
-    SHOWS = linestolist(SHOWS)
+    SHOWS = [s.strip() for s in SHOWS.split('\n')]
     S1 = [show.strip() for show in SHOWS if show.strip()]
     S2 = [RECORD.showstats.getshowbyname(s) for s in S1]
     for s1,s2 in zip(S1,S2):
@@ -227,3 +208,12 @@ The Ancient Magus' Bride
     #gettids()
     #outputcalendar_soup()
     outputcalendar_xml(shows = SHOWS)
+
+
+if __name__=="__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Syoboi Calendar Gatherer")
+    parser.add_argument("FILE", help="File to read from")
+    parser.add_argument("SHOWS", help="Shows to gather")
+    args = parser.parse_args()
+    main(args.FILE, args.SHOWS)

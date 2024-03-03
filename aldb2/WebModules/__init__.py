@@ -1,56 +1,46 @@
 ## Builtin
 import datetime
-import importlib
-import pathlib
-import urllib.request as urequest
-## Custom Module
-from alcustoms import filemodules
+import typing
+from WebModules import anidb, anilist, animenewsnetwork, crunchyroll, funimation, myanimelist, syoboi
+
+""" MODULE NOTE: A number of submodules have functionality deprecated for the time being;
+    they are commented out to make the easier to restore if they are needed in the future. """
 
 EST = datetime.timezone(datetime.timedelta(hours = -5))
 JST = datetime.timezone(datetime.timedelta(hours = 9))
 
-def discover_modules():
-    """ Discovers all valid submodules """
-    lopath = pathlib.Path(__file__).resolve().parent
-    def filetest(pathobj):
-        """ Tests if a Path Object is a valid submodule """
-        _module = importlib.import_module("aldb2.WebModules."+pathobj.stem)
-        for required_attr in ["SITENAME",]:
-            if not getattr(_module,required_attr,None):
-                del _module
-                return False
-        for required_method in ["match_url","parse_siteid",]:
-            if not callable(getattr(_module,required_method,None)):
-                del _module
-                return False
-        return True
+class PluginModule(typing.Protocol):
+    """ A module that is a valid plugin for the ALDB2 Web Module system """
+    ## SITENAME within the module has to be typed as str; if it is simply a
+    ## string literal then it's type will be Literal[str] which is incompatible
+    SITENAME: str
+    @staticmethod
+    def match_url(url: str)->bool: ...
+    @staticmethod
+    def parse_siteid(url: str)->str|typing.Literal[False]: ...
 
-    for pyfile in filemodules.iterdir_re(lopath,".*",test = filetest):
-        mod = importlib.import_module("aldb2.WebModules."+pyfile.stem)
-        MODULES[mod.SITENAME] = mod
+ModuleLookup = dict[str, PluginModule]
 
-MODULES = {}
-discover_modules()
+## NOTE: discover_modules was a function previously used to dynamically load modules from the WebModules directory.
+##       It was removed as there's not a reasonable use case for it
 
-def getseriespage(anime):
-    '''Fetches and reads homepage html into memory'''
-    print('Getting Page for:', anime.title)
-    url=anime.homepage
-    html=urequest.urlopen(url).read()
-    print('>>> Page Recieved')
-    return html
 
-def check_site(url_or_sitename):
+MODULES: ModuleLookup = {
+    anidb.SITENAME: anidb,
+    anilist.SITENAME: anilist,
+    animenewsnetwork.SITENAME: animenewsnetwork,
+    crunchyroll.SITENAME: crunchyroll,
+    funimation.SITENAME: funimation,
+    myanimelist.SITENAME: myanimelist,
+    syoboi.SITENAME: syoboi
+    }
+
+def check_site(url_or_sitename: str)->str|None:
     """ Scans installed submodules for a url or sitename that matches the given url or sitename """
     if not isinstance(url_or_sitename,str):
         raise TypeError("Invalid url or sitename")
     for mod in MODULES.values():
-        ## This is extraneous, but we'll be explicit
-        result = False
         if url_or_sitename.lower() == mod.SITENAME.lower():
-            result = True
-        else:
-            result = mod.match_url(url_or_sitename)
-            if not result:
-                result = mod.parse_siteid(url_or_sitename)
+            return mod.SITENAME
+        result = mod.match_url(url_or_sitename) or mod.parse_siteid(url_or_sitename)
         if result: return mod.SITENAME

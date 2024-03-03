@@ -1,4 +1,6 @@
 ## Builtin
+import collections
+import csv
 import datetime
 import json
 import os.path
@@ -6,13 +8,12 @@ import random
 import re
 import time
 import traceback
+import typing
 import xml.etree.ElementTree as ElementTree
 import urllib.error as uerror, urllib.request as urequest
 ## Third Party
 import bs4
 import selenium.webdriver as webdriver
-## Custom Module
-import alcustoms.subclasses as aclasses
 ## This Module
 from aldb2 import filestructure
 ## from aldb2.Core import modules as coremodules ## TODO: This needs to be fixed at some point
@@ -23,13 +24,13 @@ from aldb2.Core import sql
                      webmodules Requirements
                                                               """
 #################################################################
-SITENAME = "anidb"
+SITENAME: str = "anidb"
 
-def match_url(url):
-    return bool(re.search("""anidb\.net""",url))
+def match_url(url: str)-> bool:
+    return bool(re.search(r"""anidb\.net""",url))
 
-def parse_siteid(url):
-    result = re.search("""(https?://)?anidb.net/(?P<siteid>a?\d+)""",url)
+def parse_siteid(url: str)-> str|typing.Literal[False]:
+    result = re.search(r"""(https?://)?anidb.net/(?P<siteid>a?\d+)""",url)
     if result:
         return result.group("siteid")
     return False
@@ -356,8 +357,33 @@ def getseriesrating(anidbid):
     ## Ratings is dict with ratings 1...10
     return ratings
 
+## Extracted from alcustoms.
+class SumDict(collections.defaultdict):
+    def __init__(self,*args,  default_factory=int, **dict):
+        return super().__init__(default_factory, *args, **dict)
+    def __add__(self,other):
+        if not isinstance(other,dict):
+            raise AttributeError("SumDict can only Sum Dictionaries")
+        out=SumDict()
+        out+=self
+        out+=other
+        return out
+    def __iadd__(self,other):
+        if not isinstance(other,dict):
+            raise AttributeError("SumDict can only Sum Dictionaries")
+        for key,value in other.items():
+            self[key]+=value
+        return self
+    ## TODO: This method is slated to be pruned once it can be confirmed it's unnecssary
+    # def sum(self,other):
+    #     try:
+    #         for otherdict in other:
+    #             self+=otherdict
+    #     except TypeError:
+    #         raise TypeError("SumDict.sum takes an iterable")
+
 def getvotesfromgraph(graph):
-    graphdict=aclasses.SumDict(ANIDBRATINGSDICT)
+    graphdict= SumDict(ANIDBRATINGSDICT)
     ## Each bar is within a div "column" class
     divs=graph.find_all("div",attrs={"class":"column"})
     ## Have to weed out table header: Has a "header" div with text "Vote"
@@ -375,35 +401,35 @@ def outputstats(filelocation,stats):
     with open(filelocation,'w') as f:
         json.dump(out,f)
 
-def sortstatsbyseason(db,queryseasons,statfile,outdirectory,overwrite=True):
-    conn=sql.setupconnection(db)
-    noerrorflag=True
-    try:
-        if not os.path.exists(outdirectory):
-            os.mkdir(outdirectory)
-        with open(statfile,'r') as f:
-            stats=json.load(f)
-        shows=[]
-        for rowid,seriesstats in stats.items():
-            anime=sql.getanimebyrowid(conn,rowid)
-            if not anime: raise ValueError("No Anime with Rowid %s" % rowid)
-            seriesstats['show']=anime
-            shows.append(seriesstats)
-        seasons=dict()
-        for season in queryseasons:
-            seashows=sorted([show for show in shows if season in show['show'].animeseason],key=lambda show: show['show'].title)
-            series=[[show['show'].title,rating,show['ratings'][rating]] for show in seashows for rating in sorted(show['ratings'])]
-            seasons[coremodules.seasonstring(season)]=series
-        for season,stats in seasons.items():
-            seriesfilepath="{}/AniDB_{} Series Stats.csv".format(outdirectory,season)
-            if not overwrite and os.path.exists(seriesfilepath):
-                raise IOError("%s already exists!" % filepath)
-            with open(seriesfilepath,'w',newline="") as f: ## csv.writer already inserts /n... Not sure why???
-                writer=csv.writer(f)
-                writer.writerows(stats)
-    except:
-        traceback.print_exc()
-        noerrorflag=False
-    finally:
-        conn.close()
-    return noerrorflag
+# def sortstatsbyseason(db: str,queryseasons,statfile,outdirectory,overwrite=True):
+#     conn=sql.setupconnection(db)
+#     noerrorflag=True
+#     try:
+#         if not os.path.exists(outdirectory):
+#             os.mkdir(outdirectory)
+#         with open(statfile,'r') as f:
+#             stats=json.load(f)
+#         shows=[]
+#         for rowid,seriesstats in stats.items():
+#             anime=sql.getanimebyrowid(conn,rowid)
+#             if not anime: raise ValueError("No Anime with Rowid %s" % rowid)
+#             seriesstats['show']=anime
+#             shows.append(seriesstats)
+#         seasons=dict()
+#         for season in queryseasons:
+#             seashows=sorted([show for show in shows if season in show['show'].animeseason],key=lambda show: show['show'].title)
+#             series=[[show['show'].title,rating,show['ratings'][rating]] for show in seashows for rating in sorted(show['ratings'])]
+#             seasons[coremodules.seasonstring(season)]=series
+#         for season,stats in seasons.items():
+#             seriesfilepath="{}/AniDB_{} Series Stats.csv".format(outdirectory,season)
+#             if not overwrite and os.path.exists(seriesfilepath):
+#                 raise IOError("%s already exists!" % seriesfilepath)
+#             with open(seriesfilepath,'w',newline="") as f: ## csv.writer already inserts /n... Not sure why???
+#                 writer=csv.writer(f)
+#                 writer.writerows(stats)
+#     except:
+#         traceback.print_exc()
+#         noerrorflag=False
+#     finally:
+#         conn.close()
+#     return noerrorflag

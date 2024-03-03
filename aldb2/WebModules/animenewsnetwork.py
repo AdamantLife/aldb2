@@ -16,7 +16,7 @@ from aldb2.Core import sql
                      webmodules Requirements
                                                               """
 #################################################################
-SITENAME = "AnimeNewsNetwork"
+SITENAME: str = "AnimeNewsNetwork"
 
 def match_url(url):
     return bool(re.search("""animenewsnetwork\.com""",url))
@@ -102,37 +102,37 @@ def outputstats(outputfile,stats):
     with open(outputfile,'w') as f:
         json.dump(stats,f)
  
-def sortstatsbyseason(db,queryseasons,statfile,outdirectory,overwrite=True):
-    conn=sql.setupconnection(db)
-    noerrorflag=True
-    try:
-        if not os.path.exists(outdirectory):
-            os.mkdir(outdirectory)
-        with open(statfile,'r') as f:
-            stats=json.load(f)
-        shows=[]
-        for rowid,seriesstats in stats.items():
-            anime=sql.getanimebyrowid(conn,rowid)
-            if not anime: raise ValueError("No Anime with Rowid %s" % rowid)
-            seriesstats['show']=anime
-            shows.append(seriesstats)
-        seasons=dict()
-        for season in queryseasons:
-            seashows=sorted([show for show in shows if season in show['show'].animeseason],key=lambda show: show['show'].series)
-            series=[[show['show'].title,rating,show['ratings'][rating]] for show in seashows for rating in sorted(show['ratings'],key=ANNRATINGSORDER.index)]
-            seasons[coremodules.seasonstring(season)]=series
-        for season,stats in seasons.items():
-            seriesfilepath="{}/ANN_{} Series Stats.csv".format(outdirectory,season)
-            if not overwrite and os.path.exists(seriesfilepath):
-                raise IOError("%s already exists!" % filepath)
-            if not overwrite and os.path.exists(episodefilepath):
-                raise IOError("%s already exists!" % filepath)
-            with open(seriesfilepath,'w',newline="") as f: ## csv.writer already inserts /n... Not sure why???
-                writer=csv.writer(f)
-                writer.writerows(stats)
-    except:
-        traceback.print_exc()
-        noerrorflag=False
-    finally:
-        conn.close()
-    return noerrorflag
+# def sortstatsbyseason(db,queryseasons,statfile,outdirectory,overwrite=True):
+#     conn=sql.setupconnection(db)
+#     noerrorflag=True
+#     try:
+#         if not os.path.exists(outdirectory):
+#             os.mkdir(outdirectory)
+#         with open(statfile,'r') as f:
+#             stats=json.load(f)
+#         shows=[]
+#         for rowid,seriesstats in stats.items():
+#             anime=sql.getanimebyrowid(conn,rowid)
+#             if not anime: raise ValueError("No Anime with Rowid %s" % rowid)
+#             seriesstats['show']=anime
+#             shows.append(seriesstats)
+#         seasons=dict()
+#         for season in queryseasons:
+#             seashows=sorted([show for show in shows if season in show['show'].animeseason],key=lambda show: show['show'].series)
+#             series=[[show['show'].title,rating,show['ratings'][rating]] for show in seashows for rating in sorted(show['ratings'],key=ANNRATINGSORDER.index)]
+#             seasons[coremodules.seasonstring(season)]=series
+#         for season,stats in seasons.items():
+#             seriesfilepath="{}/ANN_{} Series Stats.csv".format(outdirectory,season)
+#             if not overwrite and os.path.exists(seriesfilepath):
+#                 raise IOError("%s already exists!" % filepath)
+#             if not overwrite and os.path.exists(episodefilepath):
+#                 raise IOError("%s already exists!" % filepath)
+#             with open(seriesfilepath,'w',newline="") as f: ## csv.writer already inserts /n... Not sure why???
+#                 writer=csv.writer(f)
+#                 writer.writerows(stats)
+#     except:
+#         traceback.print_exc()
+#         noerrorflag=False
+#     finally:
+#         conn.close()
+#     return noerrorflag

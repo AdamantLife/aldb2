@@ -20,7 +20,7 @@ default_session = requests.session_decorator_factory(useragent = True)
                      webmodules Requirements
                                                               """
 #################################################################
-SITENAME = "funimation"
+SITENAME: str = "funimation"
 
 def match_url(url):
     return bool(re.search("""funimation\.com""",url))

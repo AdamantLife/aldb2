@@ -36,6 +36,7 @@ setuptools.setup(
         "al-decorators @ git+https://github.com/AdamantLife/AL_Decorators",
         "al-text @ git+https://github.com/AdamantLife/AL_Text",
         "al-web @ git+https://github.com/AdamantLife/AL_Web",
+        "al-filemodules @ git+https://github.com/AdamantLife/AL_Filemodules",
         ],
         entry_points={
           "console_scripts": [

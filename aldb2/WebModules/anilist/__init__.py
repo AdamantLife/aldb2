@@ -6,7 +6,7 @@ import re
                      webmodules Requirements
                                                               """
 #################################################################
-SITENAME = "Anilist"
+SITENAME: str = "Anilist"
 
 def match_url(url):
     return bool(re.search("""anilist\.co""",url))
