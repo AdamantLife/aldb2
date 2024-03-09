@@ -50,13 +50,13 @@ def getseasons(connection):
     seasons = connection.execute("""SELECT season FROM yearseason;""").fetchall()
     return [season[0] for season in seasons]
 
-############ Series
+############ franchise
 
-def addseries(connection, seriesname): ## Tested: SeriesCase_Base.test_addseries/bad
-    """ Adds a new series, returning the rowid """
-    if not isinstance(seriesname,str): raise ValueError("seriesname must be str.")
+def addfranchise(connection, franchisename): ## Tested: franchiseCase_Base.test_addseries/bad
+    """ Adds a new franchise, returning the rowid """
+    if not isinstance(franchisename,str): raise ValueError("franchisename must be str.")
     result = connection.execute("""
-INSERT INTO "series" VALUES ();""")
+INSERT INTO "franchise" VALUES ();""")
     return result.lastrowid
 
 def search_aliases(connection,searchterm):

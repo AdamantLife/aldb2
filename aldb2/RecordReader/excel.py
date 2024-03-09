@@ -577,6 +577,12 @@ Normalized Value:
         Available under RankingSheet.getepisodenormalize(episode)
 """
 
+## DEV NOTE: Various Excel subclasses parse their sheets based on previously parsed classes, but everything is parsed within
+##           ExcelSeasonRecord. This means that the higher classes are not initialized before the lower classes are parsed.
+##           To avoid passing around more arguments than are necessary, the higher classes are initialized with empty values
+##           for the lower classes that are parsed later; the lower classes are then added to the higher classes after they
+##           are finished parsing.
+
 ## EnhancedTable.todicts() keyfactory for converting Headers to attribute names
 DEFAULTKEYFACTORY = lambda key: key.lower().replace(" ","")
 
@@ -729,6 +735,9 @@ class ExcelSeasonRecord(SeasonRecord):
             else:
                 warnings.warn(f'Unknown Table: "{name}"')
 
+        ## DEV NOTE: Weeks is being initialized as Empty so that RankingSheet can reference the superclass' attributes
+        super().__init__(file=file, recordstats=recordstats, showstats=showstats, weeks=weeks)
+
         for week,table in weektables.items():
             hypetable = hypetables.get(week)
             cuttable = cuttables.get(week)
@@ -793,18 +802,34 @@ class ExcelRecordStats(RecordStats):
         season = stats["extras"].get('cell_season')
         if not season:
             season = extractseasonfromfilename(str(record.file)).season
+        else: season = str(season.value)
         stats["season"] = season
         year = stats["extras"].get('cell_year')
         if not year:
             year = extractseasonfromfilename(str(record.file)).year
+        else: year = int(year.value)
         stats["year"] = year
         version = stats["extras"].get('cell_version')
         if not version:
             version = 0.0
+        else: version = float(version.value)
         stats["version"] = version
 
         super().__init__(record, stats)
         self._table = table
+
+    @property
+    def season(self)->str:
+        return self.stats["season"]
+    
+    @property
+    def year(self)->int:
+        return int(self.stats["year"])
+    
+    @property
+    def version(self)->float:
+        return float(self.stats["version"])
+
 
     
 class ExcelRecordStatsV3_1(ExcelRecordStats):
@@ -827,8 +852,11 @@ class ExcelShowStats(ShowStats):
         shows: list[collections.OrderedDict[str,Cell]] = table.todicts(keyfactory = DEFAULTKEYFACTORY, attribute="cell")
         ## Remove headers
         shows.pop(0)
+        ## DEV NOTE: Initializing with empty shows because self.loadshows requires self.idvalue
+        ##            The alternative would be to pass idvalue to loadshows
+        super().__init__(shows = ShowLookup(), idvalue= idvalue)
         _shows = self.loadshows(shows)
-        super().__init__(shows = _shows, idvalue= idvalue)
+        self.shows.update(_shows)
 
     def loadshows(self, shows: list[collections.OrderedDict[str, Cell]])-> ShowLookup:
         ## Note taht show[id] is a cell and therefore should be stored as .value
@@ -1015,7 +1043,7 @@ class ExcelEpisode(Episode, CellClass):
     show: ExcelShow|None = None
     
     def __init__(self, name: Cell, week:"RankingSheet", rank: Cell, show: ExcelShow):
-        super().__init__(week = week, rank = int(rank.value), show = show, date = None, episodenumber = None) # type: ignore ## As noted elsewhere, the linter does understand rank.value.
+        super().__init__(week = week, rank = int(rank.value) if rank.value else None, show = show, date = None, episodenumber = None) # type: ignore ## As noted elsewhere, the linter does understand rank.value.
                                                                                                               #  Converting inside of a try/except block beforehand doesn't supprose the linter error
         self.cell_name = name
         self.cell_week = week
@@ -1205,8 +1233,13 @@ class ExcelRankingSheet(RankingSheet):
         else:
             _hypelist = self.HYPELIST(hypelist,self)
 
+        ## DEV NOTE: We're initilizing episodes as an empty dict so that parseepisodes (and its super/dependent)
+        ##           functions need access to the record (at the moment, record.showstats specifically)
+        ##           The alternative would be to update all parseepisodes and parse functions on RankingSheet
+        ##           and Episode to accept record as an argument
+        super().__init__(record=record, weeknumber=weeknumber, episodes={}, hypelist=_hypelist)
         episodes = self.parseepisodes(table)
-        super().__init__(record=record, weeknumber=weeknumber, episodes=episodes, hypelist=_hypelist)
+        self.episodes.update(episodes)
 
     @property
     def table(self):

@@ -207,10 +207,10 @@ class AnimeSeason():
         return f"{self.__class__.__name__}: {self}"
 
 class Season():
-    def __init__(self, seasonid: int, subseriesid: int, seriesid: int,
-                 season: str, subseries: str, series: str,
+    def __init__(self, seasonid: int, seriesid: int, franchiseid: int,
+                 season: str, series: str, franchise: str,
                  mediumid: int, medium: str, episodes: int = 0):
-        self.subseries: core.Subseries = core.Subseries(subseriesid = subseriesid, subseries = subseries, seriesid = seriesid, series = series)
+        self.series: core.series = core.Franchise(seriesid = seriesid, series = series, franchiseid = franchiseid, franchise = franchise)
         self.seasonid: int = seasonid
         self.season: str = season
         self.medium: Medium = Medium(mediumid = mediumid, medium = medium)
@@ -230,22 +230,22 @@ class SeasonGenres():
         self.genreid: int = genreid
         self.seasonid: int = seasonid
 
-class SubseriesGenres():
-    def __init__(self, genrelistid: int, genreid: int, subseriesid: int):
+class seriesGenres():
+    def __init__(self, genrelistid: int, genreid: int, seriesid: int):
         self.genrelistid: int = genrelistid
         self.genreid: int = genreid
-        self.subseriesid: int = subseriesid
+        self.seriesid: int = seriesid
 
 class LibraryEntry():
-    def __init__(self, libraryid: int, seasonid: int, subseriesid:int, seriesid: int,
-                 season: str, subseries:str, series: str,
+    def __init__(self, libraryid: int, seasonid: int, seriesid:int, franchiseid: int,
+                 season: str, series:str, franchise: str,
                  mediumid: int, medium: str, episodes: int = 0,
                  catrank: int = 2, rank: int = 250, locked: bool = False, episodeswatched: int = 0,
                  lastwatched: int = 0, bookmarked: bool = False):
         self.libraryid: int = libraryid
         self.seasonid: int = seasonid
-        self.season: Season = Season(seasonid=seasonid, subseriesid=subseriesid, seriesid = seriesid,
-                                     season = season, subseries=subseries, series = series,
+        self.season: Season = Season(seasonid=seasonid, seriesid=seriesid, franchiseid = franchiseid,
+                                     season = season, series=series, franchise = franchise,
                                      mediumid=mediumid, medium = medium, episodes = episodes)
         self.catrank: int  = catrank
         self.rank: int = rank

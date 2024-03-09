@@ -1,14 +1,14 @@
 
+class Franchise():
+    def __init__(self,franchiseid, franchise):
+        self.franchiseid = franchiseid
+        self.franchise = franchise
+
 class Series():
-    def __init__(self,seriesid, series):
+    def __init__(self, seriesid: int|None, series, franchiseid = None, franchise = None):
+        self.franchise = Franchise(franchiseid = franchiseid, franchise = franchise)
         self.seriesid = seriesid
         self.series = series
-
-class Subseries():
-    def __init__(self, subseriesid: int|None, subseries, seriesid = None, series = None):
-        self.series = Series(seriesid = seriesid, series = series)
-        self.subseriesid = subseriesid
-        self.subseries = subseries
 
 class Genre():
     def __init__(self, genreid, name, abbreviation = None, dark = False, spoiler = False):

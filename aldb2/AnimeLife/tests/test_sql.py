@@ -35,22 +35,22 @@ def fullsetup(testcase):
 
 def populate_tables(testcase):
     """ Custom test values for this App """
+    populate_franchise(testcase)
     populate_series(testcase)
-    populate_subseries(testcase)
     populate_season(testcase)
     populate_animeseasons(testcase)
     
+def populate_franchise(testcase):
+    testdata = gettestdata()
+    testcase.connection.executemany("""INSERT INTO franchise (franchiseid,franchise) VALUES (?,?);""",testdata['setup']['franchise'])
+
 def populate_series(testcase):
     testdata = gettestdata()
-    testcase.connection.executemany("""INSERT INTO series (seriesid,series) VALUES (?,?);""",testdata['setup']['series'])
-
-def populate_subseries(testcase):
-    testdata = gettestdata()
-    testcase.connection.executemany("""INSERT INTO subseries (subseriesid,series,subseries) VALUES (?,?,?);""",testdata['setup']['subseries'])
+    testcase.connection.executemany("""INSERT INTO series (seriesid,franchise,series) VALUES (?,?,?);""",testdata['setup']['series'])
 
 def populate_season(testcase):
     testdata = gettestdata()
-    testcase.connection.executemany("""INSERT INTO season (seasonid,subseries,season,medium,episodes) VALUES (?,?,?,1,?);""",testdata['setup']['season'])
+    testcase.connection.executemany("""INSERT INTO season (seasonid,series,season,medium,episodes) VALUES (?,?,?,1,?);""",testdata['setup']['season'])
 
 def populate_animeseasons(testcase):
     testdata = gettestdata()

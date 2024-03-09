@@ -129,12 +129,12 @@ def fullsetuptestdatabase(testcase):
     installinfo = sql.getappbyname(testcase.connection, testcase.appname)
     sql.registeruserapp(testcase.connection,installinfo['installid'],testcase.testuserinfo['userid'])
 
-def setupseries(testcase):
-    """ Inserts default series into the database, settings a dict of id:name as self.series """
-    testcase.series = dict()
+def setupfranchise(testcase):
+    """ Inserts default franchise into the database, settings a dict of id:name as self.franchise """
+    testcase.franchise = dict()
     for ser in ["The Awesome Anime; ザアニメ！", "GSS: Generic Shounen Show", "This Show is as Chuuni as My Dark Soul","This Season's Idol Show"]:
-        sid = sql.addseries(testcase.connection, ser)
-        testcase.series[sid] = ser
+        sid = sql.addfranchise(testcase.connection, ser)
+        testcase.franchise[sid] = ser
 
 def memory_setuptestdatabase(testcase):
     """ Sets up a new database in-memory, loading the Core App into it.
@@ -151,8 +151,8 @@ def populate_all(testcase):
     conn = testcase.connection
     setuptestuser(testcase,conn)
     setuptestusersession(testcase)
+    setupfranchise(testcase)
     setupseries(testcase)
-    setupsubseries(testcase)
     setupseries_aliases(testcase)
     setupsubseries_aliases(testcase)
     setupsubseries_genrelist(testcase)
@@ -169,26 +169,26 @@ def setuptestusersession(testcase):
     time2 = datetime.datetime.now()
     ))
     
-def setupsubseries(testcase):
-    """ Populates the Subseries Table. """
-    for series,subseries in [(0,None),(1,"First Series"),(2,None),(2,"Ura"), (4,None),]:
-        sql.addsubseries(testcase.connection,series,subseries)
+def setupseries(testcase):
+    """ Populates the series Table. """
+    for franchise,series in [(0,None),(1,"First franchise"),(2,None),(2,"Ura"), (4,None),]:
+        sql.addseries(testcase.connection,franchise,series)
 
 def setupseries_aliases(testcase):
-    for seriesalias,series,language in [("GSS",1,"enlish"),("その名前は偽物だ！",2,"japanese"),("バカメ",1,"japanese")]:
-        sql.addseriesalias(testcase.connection, seriesid = series, seriesalias = seriesalias, language = language)
+    for franchisealias,franchise,language in [("GSS",1,"enlish"),("その名前は偽物だ！",2,"japanese"),("バカメ",1,"japanese")]:
+        sql.addseriesalias(testcase.connection, franchiseid = franchise, franchisealias = franchisealias, language = language)
 
 def setupsubseries_aliases(testcase):
-    for subseriesalias,subseries,language in [("Series The First",1,"japanese"),("あたしは天使だよ！ペロ:P",2,"japanese")]:
-        sql.addsubseriesalias(testcase.connection, subseriesid = subseries, subseriesalias = subseriesalias, language = language)
+    for seriesalias,series,language in [("franchise The First",1,"japanese"),("あたしは天使だよ！ペロ:P",2,"japanese")]:
+        sql.addsubseriesalias(testcase.connection, seriesid = series, seriesalias = seriesalias, language = language)
 
 def setupsubseries_genrelist(testcase):
-    for subseries,genres in [(0,(13,5,4)),
+    for series,genres in [(0,(13,5,4)),
                              (1,(22,)),
                              (2,(3,2,17)),
                              (3,(12,28,24)),
                              (4,(10,))]:
-        sql.addsubseriesgenres(testcase.connection,subseries,*genres)
+        sql.addsubseriesgenres(testcase.connection,series,*genres)
 
 ################# OTHER RESOURCES
 """ Miscellaneous resources for testing """
